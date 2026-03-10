@@ -8,11 +8,11 @@ import ScaleGraph from "./ScaleGraph";
 import LivePreview from "./LivePreview";
 import TypeScale from "./TypeScale";
 import AccessibilityWarning from "./AccessibilityWarning";
-import BreakpointTable from "./BreakPointTable";
+import BreakpointTable from "./BreakpointTable";
 import FormulaPanel from "./FormulaPanel";
 import SavedConfigs from "./SavedConfigs";
 import ExportPanel from "./ExportPanel";
-import Docspanel from "./Docspanel";
+import DocsPanel from "./DocsPanel";
 import {
   calculateClamp,
   generateGraphData,
@@ -167,7 +167,7 @@ export default function FluidTypographyGenerator() {
             formulas that scale smoothly between screen sizes.
           </p>
         </div>
-        <Docspanel theme={theme} />
+        <DocsPanel theme={theme} />
 
         {/* Inputs */}
         <InputPanel
