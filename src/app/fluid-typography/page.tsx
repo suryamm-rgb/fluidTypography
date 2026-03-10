@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import FluidTypographyGenerator from "../../components/FluidTypographyGenerator";
 
 export const metadata = {
@@ -6,5 +7,9 @@ export const metadata = {
 };
 
 export default function FluidTypographyPage() {
-  return <FluidTypographyGenerator />;
+  return (
+    <Suspense>
+      <FluidTypographyGenerator />
+    </Suspense>
+  );
 }

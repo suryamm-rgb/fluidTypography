@@ -1,35 +1,73 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useMemo, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import InputPanel from "./InputPanel";
 import ClampResult from "./ClampResult";
 import ScaleGraph from "./ScaleGraph";
 import LivePreview from "./LivePreview";
 import TypeScale from "./TypeScale";
-import AccessibilityWarning from "./Accessibilitywarning";
-import BreakpointTable from "./Breakpointtable";
-import FormulaPanel from "./Formulapanel ";
+import AccessibilityWarning from "./AccessibilityWarning";
+import BreakpointTable from "./BreakPointTable";
+import FormulaPanel from "./FormulaPanel";
+import SavedConfigs from "./SavedConfigs";
+import ExportPanel from "./ExportPanel";
+import Docspanel from "./Docspanel";
 import {
   calculateClamp,
   generateGraphData,
-  generateTypeScale,
   getPreviewFontSize,
-} from "./Calculateclamp";
+  generateTypeScale,
+} from "./CalculateClamp";
 
-const TABS = ["Single", "Type Scale"];
+const TABS = ["Single", "Type Scale", "Export"];
+
+function numParam(params, key, fallback) {
+  const v = params.get(key);
+  const n = v !== null ? Number(v) : NaN;
+  return isNaN(n) ? fallback : n;
+}
 
 export default function FluidTypographyGenerator() {
-  const [minFont, setMinFont] = useState(12);
-  const [maxFont, setMaxFont] = useState(20);
-  const [minScreen, setMinScreen] = useState(375);
-  const [maxScreen, setMaxScreen] = useState(1280);
-  const [rootSize, setRootSize] = useState(16);
-  const [previewScreen, setPreviewScreen] = useState(800);
-  const [activeTab, setActiveTab] = useState("Single");
-  const [unit, setUnit] = useState("rem");
-  const [reverseScale, setReverseScale] = useState(false);
+  const router = useRouter();
+  const params = useSearchParams();
 
-  // If reverse mode, swap min/max font so vw becomes negative
+  // All state is stored in the URL — refresh restores everything exactly.
+  const minFont = numParam(params, "minFont", 12);
+  const maxFont = numParam(params, "maxFont", 20);
+  const minScreen = numParam(params, "minScreen", 375);
+  const maxScreen = numParam(params, "maxScreen", 1280);
+  const rootSize = numParam(params, "rootSize", 16);
+  const previewScreen = numParam(params, "previewScreen", 800);
+  const activeTab = params.get("tab") ?? "Single";
+  const unit = params.get("unit") ?? "rem";
+  const reverseScale = params.get("reverse") === "1";
+  const theme = params.get("theme") ?? "dark";
+
+  const setParam = useCallback(
+    (patch) => {
+      const next = new URLSearchParams(params.toString());
+      Object.entries(patch).forEach(([k, v]) => {
+        if (v === null || v === undefined) next.delete(k);
+        else next.set(k, String(v));
+      });
+      router.replace(`?${next.toString()}`, { scroll: false });
+    },
+    [params, router],
+  );
+
+  const setMinFont = (v) => setParam({ minFont: v });
+  const setMaxFont = (v) => setParam({ maxFont: v });
+  const setMinScreen = (v) => setParam({ minScreen: v });
+  const setMaxScreen = (v) => setParam({ maxScreen: v });
+  const setRootSize = (v) => setParam({ rootSize: v });
+  const setPreviewScreen = (v) => setParam({ previewScreen: v });
+  const setActiveTab = (v) => setParam({ tab: v });
+  const setUnit = (v) => setParam({ unit: v });
+  const setTheme = (v) => setParam({ theme: v });
+  const toggleReverse = () => setParam({ reverse: reverseScale ? "0" : "1" });
+
+  const isDark = theme === "dark";
   const effectiveMin = reverseScale ? maxFont : minFont;
   const effectiveMax = reverseScale ? minFont : maxFont;
 
@@ -44,17 +82,10 @@ export default function FluidTypographyGenerator() {
       ),
     [effectiveMin, effectiveMax, minScreen, maxScreen, rootSize],
   );
-
   const graphData = useMemo(
     () => generateGraphData(effectiveMin, effectiveMax, minScreen, maxScreen),
     [effectiveMin, effectiveMax, minScreen, maxScreen],
   );
-
-  const typeScale = useMemo(
-    () => generateTypeScale(minFont, maxFont, minScreen, maxScreen, rootSize),
-    [minFont, maxFont, minScreen, maxScreen, rootSize],
-  );
-
   const previewFontSize = useMemo(
     () =>
       getPreviewFontSize(
@@ -66,29 +97,77 @@ export default function FluidTypographyGenerator() {
       ),
     [effectiveMin, effectiveMax, minScreen, maxScreen, previewScreen],
   );
+  const typeScale = useMemo(
+    () =>
+      generateTypeScale(
+        effectiveMin,
+        effectiveMax,
+        minScreen,
+        maxScreen,
+        rootSize,
+        1.25,
+      ),
+    [effectiveMin, effectiveMax, minScreen, maxScreen, rootSize],
+  );
 
+  const bg = isDark ? "bg-[#080808]" : "bg-gray-50";
+  const text = isDark ? "text-[#e0e0e0]" : "text-gray-900";
+  const cardBg = isDark ? "bg-[#0d0d0d]" : "bg-white";
+  const border = isDark ? "border-[#1e1e1e]" : "border-gray-200";
+  const label = isDark ? "text-[#555]" : "text-gray-400";
+  // Dark mode
+  const tabActive = isDark
+    ? "bg-violet-500/15 border-violet-400/40 text-violet-300 shadow-[0_0_12px_rgba(139,92,246,0.25)]"
+    : "bg-violet-50 border-violet-300 text-violet-700 shadow-sm";
+
+  const tabIdle = isDark
+    ? "bg-transparent border-transparent text-[#666] hover:text-[#aaa] hover:border-[#2a2a2a]"
+    : "bg-transparent border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200";
   return (
-    <div className="min-h-screen bg-[#080808] text-[#e0e0e0] font-mono px-6 py-12 box-border">
-      <div className="max-w-170 mx-auto">
+    <div
+      className={`min-h-screen ${bg} ${text} font-mono px-6 py-12 box-border transition-colors duration-200`}
+    >
+      <div className="max-w-200 mx-auto">
         {/* Header */}
         <div className="mb-12">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-[11px] text-[#555] hover:text-violet-400 transition-colors mb-6 no-underline uppercase tracking-widest"
+          <div className="flex items-center justify-between mb-6">
+            <Link
+              href="/"
+              className={`inline-flex items-center gap-1.5 text-[14px] hover:text-violet-400 transition-colors no-underline uppercase tracking-widest ${label}`}
+            >
+              ← Back
+            </Link>
+            <button
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[14px] font-mono cursor-pointer transition-all ${
+                isDark
+                  ? "bg-[#111] border-[#2a2a2a] text-[#555] hover:text-[#888]"
+                  : "bg-white border-gray-200 text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              {isDark ? "☀ Light" : "◑ Dark"}
+            </button>
+          </div>
+          <span
+            className={`block border rounded px-2.5 py-1 text-[11px] uppercase tracking-widest mb-4 font-mono w-fit ${
+              isDark
+                ? "bg-[#1a1a1a] border-[#2a2a2a] text-[#666]"
+                : "bg-gray-100 border-gray-200 text-gray-400"
+            }`}
           >
-            ← Back
-          </Link>
-          <span className="block bg-[#1a1a1a] border border-[#2a2a2a] rounded px-2.5 py-1 text-[11px] text-[#666] uppercase tracking-widest mb-4 font-mono w-fit">
             CSS Utility
           </span>
-          <h1 className="font-(family-name:--font-syne) text-[clamp(28px,5vw,42px)] font-extrabold text-white m-0 leading-none tracking-tight">
+          <h1 className="font-(family-name:--font-syne) text-[clamp(28px,5vw,42px)] font-extrabold leading-none tracking-tight">
             Fluid Typography
           </h1>
-          <p className="text-[#444] text-[13px] mt-2.5 leading-relaxed">
+          <p
+            className={`text-[13px] mt-2.5 leading-relaxed ${isDark ? "text-[#666]" : "text-gray-400"}`}
+          >
             Generate CSS <span className="text-violet-400">clamp()</span>{" "}
             formulas that scale smoothly between screen sizes.
           </p>
         </div>
+        <Docspanel theme={theme} />
 
         {/* Inputs */}
         <InputPanel
@@ -102,45 +181,59 @@ export default function FluidTypographyGenerator() {
           setMaxScreen={setMaxScreen}
           rootSize={rootSize}
           setRootSize={setRootSize}
+          theme={theme}
         />
 
         {/* Reverse scale toggle */}
-        <div className="bg-[#0d0d0d] border border-[#1e1e1e] rounded-2xl px-6 py-4 mb-6 flex items-center justify-between gap-4 flex-wrap">
+        <div
+          className={`${cardBg} border ${border} rounded-2xl px-6 py-4 mb-6 flex items-center justify-between gap-4 flex-wrap`}
+        >
           <div>
-            <p className="text-[11px] text-[#555] uppercase tracking-widest font-mono mb-0.5">
+            <p
+              className={`text-[13px] uppercase tracking-widest font-mono mb-0.5 ${label}`}
+            >
               Reverse Scaling
             </p>
-            <p className="text-[11px] text-[#333] font-mono">
-              Font size <span className="text-[#666]">decreases</span> as screen
-              width increases (negative vw)
+            <p
+              className={`text-[12px] font-mono ${isDark ? "text-[#555]" : "text-gray-400"}`}
+            >
+              Font size{" "}
+              <span className={isDark ? "text-[#666]" : "text-gray-600"}>
+                decreases
+              </span>{" "}
+              as screen width increases (negative vw)
             </p>
           </div>
           <button
-            onClick={() => setReverseScale((v) => !v)}
+            onClick={toggleReverse}
             className={`relative w-11 h-6 rounded-full border transition-all duration-200 cursor-pointer shrink-0 ${
               reverseScale
                 ? "bg-violet-500/30 border-violet-400/50"
-                : "bg-[#111] border-[#2a2a2a]"
+                : isDark
+                  ? "bg-[#111] border-[#2a2a2a]"
+                  : "bg-gray-100 border-gray-200"
             }`}
           >
             <span
               className={`absolute top-0.5 w-5 h-5 rounded-full transition-all duration-200 ${
-                reverseScale ? "left-4.5 bg-violet-400" : "left-0.5 bg-[#333]"
+                reverseScale
+                  ? "left-4.5 bg-violet-400"
+                  : `left-0.5 ${isDark ? "bg-[#333]" : "bg-gray-300"}`
               }`}
             />
           </button>
         </div>
 
         {/* Tab switcher */}
-        <div className="flex gap-1 mb-6 bg-[#0d0d0d] border border-[#1e1e1e] rounded-xl p-1">
+        <div
+          className={`flex gap-1 mb-6 ${cardBg} border ${border} rounded-xl p-1`}
+        >
           {TABS.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`flex-1 py-2 rounded-lg text-[12px] font-mono tracking-wide cursor-pointer transition-all border ${
-                activeTab === tab
-                  ? "bg-[#1a1a2e] border-[#3d3d6b] text-violet-400"
-                  : "bg-transparent border-transparent text-[#444] hover:text-[#777]"
+                activeTab === tab ? tabActive : tabIdle
               }`}
             >
               {tab}
@@ -148,13 +241,14 @@ export default function FluidTypographyGenerator() {
           ))}
         </div>
 
-        {/* Accessibility warning — always visible in Single tab */}
         {activeTab === "Single" && (
-          <AccessibilityWarning isNegativeVw={result.isNegativeVw} />
+          <AccessibilityWarning
+            isNegativeVw={result.isNegativeVw}
+            theme={theme}
+          />
         )}
 
-        {/* Tab content */}
-        {activeTab === "Single" ? (
+        {activeTab === "Single" && (
           <>
             <ClampResult
               result={result}
@@ -162,6 +256,7 @@ export default function FluidTypographyGenerator() {
               maxFont={effectiveMax}
               unit={unit}
               setUnit={setUnit}
+              theme={theme}
             />
             <FormulaPanel
               minFont={effectiveMin}
@@ -169,17 +264,20 @@ export default function FluidTypographyGenerator() {
               minScreen={minScreen}
               maxScreen={maxScreen}
               rootSize={rootSize}
+              theme={theme}
             />
             <BreakpointTable
               minFont={effectiveMin}
               maxFont={effectiveMax}
               minScreen={minScreen}
               maxScreen={maxScreen}
+              theme={theme}
             />
             <ScaleGraph
               graphData={graphData}
               minScreen={minScreen}
               maxScreen={maxScreen}
+              theme={theme}
             />
             <LivePreview
               minScreen={minScreen}
@@ -187,10 +285,46 @@ export default function FluidTypographyGenerator() {
               previewScreen={previewScreen}
               setPreviewScreen={setPreviewScreen}
               previewFontSize={previewFontSize}
+              theme={theme}
             />
           </>
-        ) : (
-          <TypeScale scale={typeScale} unit={unit} setUnit={setUnit} />
+        )}
+
+        {activeTab === "Type Scale" && (
+          <TypeScale
+            minFont={effectiveMin}
+            maxFont={effectiveMax}
+            minScreen={minScreen}
+            maxScreen={maxScreen}
+            rootSize={rootSize}
+            unit={unit}
+            setUnit={setUnit}
+            theme={theme}
+          />
+        )}
+
+        {activeTab === "Export" && (
+          <>
+            <SavedConfigs
+              currentMinFont={effectiveMin}
+              currentMaxFont={effectiveMax}
+              currentMinScreen={minScreen}
+              currentMaxScreen={maxScreen}
+              currentRootSize={rootSize}
+              unit={unit}
+              theme={theme}
+            />
+            <ExportPanel
+              result={result}
+              scale={typeScale}
+              unit={unit}
+              theme={theme}
+              minFont={effectiveMin}
+              maxFont={effectiveMax}
+              minScreen={minScreen}
+              maxScreen={maxScreen}
+            />
+          </>
         )}
       </div>
     </div>

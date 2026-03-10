@@ -11,18 +11,23 @@ export function calculateClamp(
   const vw = slope * 100;
   const intercept = minFont - slope * minScreen;
 
-  const minRem = (minFont / rootSize).toFixed(3);
-  const maxRem = (maxFont / rootSize).toFixed(3);
+  // clamp(MIN, preferred, MAX) requires MIN <= MAX always.
+  // When reverse scaling, minFont > maxFont — sort them so the CSS is valid.
+  const clampLo = Math.min(minFont, maxFont);
+  const clampHi = Math.max(minFont, maxFont);
+
+  const minRem = (clampLo / rootSize).toFixed(3);
+  const maxRem = (clampHi / rootSize).toFixed(3);
   const interceptRem = (intercept / rootSize).toFixed(3);
   const vwFixed = vw.toFixed(3);
   const isNegativeVw = vw < 0;
 
-  // preferred: intercept rem + vw   (negative vw reverses scaling)
+  // preferred: intercept rem + vw   (negative vw handles reverse direction)
   const preferred = `${interceptRem}rem + ${vwFixed}vw`;
 
   return {
     clampRem: `clamp(${minRem}rem, ${preferred}, ${maxRem}rem)`,
-    clampPx: `clamp(${minFont}px, ${intercept.toFixed(3)}px + ${vwFixed}vw, ${maxFont}px)`,
+    clampPx: `clamp(${clampLo}px, ${intercept.toFixed(3)}px + ${vwFixed}vw, ${clampHi}px)`,
     clampEm: `clamp(${minRem}em, ${preferred.replace(/rem/g, "em")}, ${maxRem}em)`,
     minRem,
     maxRem,
@@ -62,9 +67,12 @@ export function generateBreakpointTable(
   const slope = (maxFont - minFont) / (maxScreen - minScreen);
   const intercept = minFont - slope * minScreen;
 
+  const lo = Math.min(minFont, maxFont);
+  const hi = Math.max(minFont, maxFont);
+
   return breakpoints.map((screen) => {
     const raw = intercept + slope * screen;
-    const clamped = Math.min(maxFont, Math.max(minFont, raw));
+    const clamped = Math.min(hi, Math.max(lo, raw));
     const zone =
       screen <= minScreen ? "min" : screen >= maxScreen ? "max" : "fluid";
     return { screen, size: parseFloat(clamped.toFixed(2)), zone };
@@ -150,12 +158,18 @@ export function generateTypeScale(
 export function generateGraphData(minFont, maxFont, minScreen, maxScreen) {
   const slope = (maxFont - minFont) / (maxScreen - minScreen);
   const intercept = minFont - slope * minScreen;
+  const lo = Math.min(minFont, maxFont);
+  const hi = Math.max(minFont, maxFont);
   const points = [];
-  const step = (maxScreen - minScreen) / 20;
+
+  // Guarantee at least 20px per step so narrow ranges (e.g. 100px wide)
+  // don't produce too few points or a zero/negative step size.
+  const range = maxScreen - minScreen;
+  const step = Math.max(range / 20, 20);
 
   for (let s = minScreen - 100; s <= maxScreen + 100; s += step) {
     const rawSize = intercept + slope * s;
-    const clamped = Math.min(maxFont, Math.max(minFont, rawSize));
+    const clamped = Math.min(hi, Math.max(lo, rawSize));
     points.push({
       screen: Math.round(s),
       size: parseFloat(clamped.toFixed(2)),
@@ -175,6 +189,8 @@ export function getPreviewFontSize(
 ) {
   const slope = (maxFont - minFont) / (maxScreen - minScreen);
   const intercept = minFont - slope * minScreen;
+  const lo = Math.min(minFont, maxFont);
+  const hi = Math.max(minFont, maxFont);
   const raw = intercept + slope * previewScreen;
-  return Math.min(maxFont, Math.max(minFont, raw)).toFixed(1);
+  return Math.min(hi, Math.max(lo, raw)).toFixed(1);
 }

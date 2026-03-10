@@ -9,22 +9,40 @@ import {
   ReferenceLine,
 } from "recharts";
 
-const CustomTooltip = ({ active, payload }) => {
+function CustomTooltip({ active, payload, isDark }) {
   if (!active || !payload?.length) return null;
+  const bg = isDark
+    ? "bg-[#0f0f0f] border-[#2a2a2a] text-[#e0e0e0]"
+    : "bg-white border-gray-200 text-gray-800";
+  const mutedT = isDark ? "text-[#8b8b8b]" : "text-gray-400";
   return (
-    <div className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3.5 py-2.5 font-mono text-[12px] text-[#e0e0e0]">
-      <p className="text-[#8b8b8b] mb-1">screen</p>
-      <p className="text-white font-semibold">{payload[0].payload.screen}px</p>
-      <p className="text-[#8b8b8b] mt-1.5 mb-1">font-size</p>
+    <div
+      className={`border rounded-lg px-3.5 py-2.5 font-mono text-[12px] shadow-lg ${bg}`}
+    >
+      <p className={`mb-1 ${mutedT}`}>screen</p>
+      <p className="font-semibold">{payload[0].payload.screen}px</p>
+      <p className={`mt-1.5 mb-1 ${mutedT}`}>font-size</p>
       <p className="text-violet-400 font-semibold">{payload[0].value}px</p>
     </div>
   );
-};
+}
 
-export default function ScaleGraph({ graphData, minScreen, maxScreen }) {
+export default function ScaleGraph({ graphData, minScreen, maxScreen, theme }) {
+  const isDark = theme === "dark";
+  const cardCls = isDark
+    ? "bg-[#0d0d0d] border-[#1e1e1e]"
+    : "bg-white border-gray-200";
+  const muted = isDark ? "text-[#555]" : "text-gray-400";
+  const muted2 = isDark ? "text-[#444]" : "text-gray-400";
+  const tickFill = isDark ? "#444" : "#9ca3af";
+  const axisLine = isDark ? "#1e1e1e" : "#e5e7eb";
+  const refLine = isDark ? "#2a2a2a" : "#d1d5db";
+
   return (
-    <div className="bg-[#0d0d0d] border border-[#1e1e1e] rounded-2xl p-7 mb-6">
-      <p className="text-[11px] text-[#555] uppercase tracking-widest mb-5 font-mono">
+    <div className={`border rounded-2xl p-7 mb-6 transition-colors ${cardCls}`}>
+      <p
+        className={`text-[11px] uppercase tracking-widest mb-5 font-mono ${muted}`}
+      >
         Scale Visualization
       </p>
 
@@ -35,20 +53,20 @@ export default function ScaleGraph({ graphData, minScreen, maxScreen }) {
         >
           <XAxis
             dataKey="screen"
-            tick={{ fill: "#444", fontSize: 11, fontFamily: "DM Mono" }}
+            tick={{ fill: tickFill, fontSize: 11, fontFamily: "DM Mono" }}
             tickLine={false}
-            axisLine={{ stroke: "#1e1e1e" }}
+            axisLine={{ stroke: axisLine }}
             tickFormatter={(v) => `${v}px`}
           />
           <YAxis
-            tick={{ fill: "#444", fontSize: 11, fontFamily: "DM Mono" }}
+            tick={{ fill: tickFill, fontSize: 11, fontFamily: "DM Mono" }}
             tickLine={false}
             axisLine={false}
             tickFormatter={(v) => `${v}px`}
           />
-          <Tooltip content={<CustomTooltip />} />
-          <ReferenceLine x={minScreen} stroke="#2a2a2a" strokeDasharray="4 4" />
-          <ReferenceLine x={maxScreen} stroke="#2a2a2a" strokeDasharray="4 4" />
+          <Tooltip content={<CustomTooltip isDark={isDark} />} />
+          <ReferenceLine x={minScreen} stroke={refLine} strokeDasharray="4 4" />
+          <ReferenceLine x={maxScreen} stroke={refLine} strokeDasharray="4 4" />
           <Line
             type="monotone"
             dataKey="size"
@@ -60,13 +78,11 @@ export default function ScaleGraph({ graphData, minScreen, maxScreen }) {
         </LineChart>
       </ResponsiveContainer>
 
-      <div className="flex justify-center gap-6 mt-2">
-        <span className="text-[11px] text-[#444] font-mono">
-          ← min screen: {minScreen}px
-        </span>
-        <span className="text-[11px] text-[#444] font-mono">
-          max screen: {maxScreen}px →
-        </span>
+      <div
+        className={`flex justify-center gap-6 mt-2 text-[11px] font-mono ${muted2}`}
+      >
+        <span>← min screen: {minScreen}px</span>
+        <span>max screen: {maxScreen}px →</span>
       </div>
     </div>
   );

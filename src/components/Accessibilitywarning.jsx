@@ -1,15 +1,48 @@
 "use client";
+import { useState } from "react";
 
-export default function AccessibilityWarning({ isNegativeVw }) {
+export default function AccessibilityWarning({ isNegativeVw, theme }) {
+  const [dismissed, setDismissed] = useState(false);
+  const isDark = theme === "dark";
+
+  if (dismissed) return null;
+
+  const bg = isDark
+    ? "bg-[#1a1200] border-[#3a2800]"
+    : "bg-amber-50 border-amber-200";
+  const innerBg = isDark
+    ? "bg-[#1f1500] border-[#4a3300]"
+    : "bg-amber-100/60 border-amber-200";
+  const bodyText = isDark ? "text-[#fbbf24]" : "text-amber-700";
+  const innerTxt = isDark ? "text-[#f59e0b]" : "text-amber-600";
+  const linkCls = isDark
+    ? "text-[#f59e0b] hover:text-amber-300 border-[#3a2800] hover:border-amber-400/30"
+    : "text-amber-600 hover:text-amber-800 border-amber-200 hover:border-amber-400";
+  const xCls = isDark
+    ? "text-[#888] hover:text-[#ccc]"
+    : "text-amber-400 hover:text-amber-600";
+
   return (
-    <div className="bg-[#1a1200] border border-[#3a2800] rounded-2xl p-5 mb-6">
+    <div className={`border rounded-2xl p-5 mb-6 transition-colors ${bg}`}>
       <div className="flex items-start gap-3">
         <span className="text-amber-400 text-[16px] shrink-0 mt-0.5">⚠</span>
-        <div>
-          <p className="text-[12px] text-amber-400 font-mono font-semibold mb-1 uppercase tracking-widest">
-            WCAG Accessibility Notice
-          </p>
-          <p className="text-[12px] text-[#886633] font-mono leading-relaxed mb-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <p className="text-[12px] text-amber-400 font-mono font-semibold uppercase tracking-widest">
+              WCAG Accessibility Notice
+            </p>
+            <button
+              onClick={() => setDismissed(true)}
+              className={`shrink-0 text-[14px] font-mono cursor-pointer transition-colors leading-none ${xCls}`}
+              title="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
+
+          <p
+            className={`text-[12px] font-mono leading-relaxed mb-3 ${bodyText}`}
+          >
             Using <span className="text-amber-500">vw</span> in{" "}
             <span className="text-amber-500">clamp()</span> can prevent users
             from scaling text to 200% via browser zoom — a{" "}
@@ -18,11 +51,13 @@ export default function AccessibilityWarning({ isNegativeVw }) {
           </p>
 
           {isNegativeVw && (
-            <div className="bg-[#1f1500] border border-[#4a3300] rounded-lg px-3.5 py-3 mb-3">
+            <div className={`border rounded-lg px-3.5 py-3 mb-3 ${innerBg}`}>
               <p className="text-[11px] text-amber-500 font-mono font-semibold mb-1 uppercase tracking-widest">
                 Negative vw — Reverse Scaling Active
               </p>
-              <p className="text-[11px] text-[#775522] font-mono leading-relaxed">
+              <p
+                className={`text-[11px] font-mono leading-relaxed ${innerTxt}`}
+              >
                 Your config uses a negative vw value. Font size will{" "}
                 <span className="text-amber-400">decrease</span> as screen width
                 increases. This is valid CSS but an uncommon pattern — verify
@@ -51,7 +86,7 @@ export default function AccessibilityWarning({ isNegativeVw }) {
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[10px] font-mono text-[#664422] hover:text-amber-400 transition-colors border border-[#3a2800] hover:border-amber-400/30 rounded px-2.5 py-1 no-underline"
+                className={`text-[10px] font-mono transition-colors border rounded px-2.5 py-1 no-underline ${linkCls}`}
               >
                 {label} ↗
               </a>
