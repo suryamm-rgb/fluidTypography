@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import InputPanel from "./InputPanel";
 import ClampResult from "./ClampResult";
 import ScaleGraph from "./ScaleGraph";
@@ -38,7 +39,13 @@ export default function FluidTypographyGenerator() {
       <div className="max-w-170 mx-auto">
         {/* Header */}
         <div className="mb-12">
-          <span className="inline-block bg-[#1a1a1a] border border-[#2a2a2a] rounded px-2.5 py-1 text-[11px] text-[#666] uppercase tracking-widest mb-4 font-mono">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-[11px] text-[#555] hover:text-violet-400 transition-colors mb-6 no-underline uppercase tracking-widest"
+          >
+            ← Back
+          </Link>
+          <span className="block bg-[#1a1a1a] border border-[#2a2a2a] rounded px-2.5 py-1 text-[11px] text-[#666] uppercase tracking-widest mb-4 font-mono w-fit">
             CSS Utility
           </span>
           <h1 className="font-(family-name:--font-syne) text-[clamp(28px,5vw,42px)] font-extrabold text-white m-0 leading-none tracking-tight">
