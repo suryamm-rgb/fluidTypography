@@ -8,6 +8,13 @@ const tools = [
       "Generate CSS clamp() formulas that scale smoothly between screen sizes.",
     tag: "CSS Utility",
   },
+  {
+    href: "/fluid-spacing",
+    label: "Fluid Spacing",
+    description:
+      "Generate clamp() values for padding, margin and gap — with live curve visualization.",
+    tag: "CSS Utility",
+  },
   // Add more tools here later
 ];
 
