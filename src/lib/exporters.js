@@ -59,7 +59,7 @@ module.exports = {
 
 export function buildScale(
   format,
-  { result, scale, unit, name, minFont, maxFont, minScreen, maxScreen },
+  { result, scale, unit, minFont, maxFont, minScreen, maxScreen },
 ) {
   if (format === "JSON") {
     const scaleObj = Object.fromEntries(
@@ -90,7 +90,7 @@ export function buildScale(
     const entries = scale
       .map(
         ({ label, result: r, minPx, maxPx }) =>
-          `      /* ${range(minPx, maxPx)} */\n      'fluid-${label}': '${getClampValue(r, unit)}',`,
+          `        /* ${range(minPx, maxPx)} */\n        'fluid-${label}': '${getClampValue(r, unit)}',`,
       )
       .join("\n");
     return `// tailwind.config.js
@@ -118,8 +118,6 @@ ${entries}
  * Unit:   ${unit}
  */
 :root {
-  --${name}: ${getClampValue(result, unit)};
-
 ${scaleVars}
 }`;
 }

@@ -53,3 +53,8 @@ test("saved configs use slug names", () => {
   );
   assert.ok(out.includes("--hero-title: clamp(16px"));
 });
+
+test("scale CSS declares each custom property once", () => {
+  const names = [...buildScale("CSS", args).matchAll(/^\s+(--[\w-]+):/gm)].map((m) => m[1]);
+  assert.equal(new Set(names).size, names.length);
+});
