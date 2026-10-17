@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Header, { REPO_URL } from "./Header";
 import { ToastProvider } from "./Toast";
 import Tabs, { panelId, tabId } from "./Tabs";
@@ -39,6 +39,7 @@ function enumParam(params, key, allowed, fallback) {
 }
 
 export default function FluidTypographyGenerator() {
+  const router = useRouter();
   const params = useSearchParams();
   const [format, setFormat] = useState("CSS");
 
@@ -60,8 +61,8 @@ export default function FluidTypographyGenerator() {
       if (v === null || v === undefined) next.delete(k);
       else next.set(k, String(v));
     }
-    window.history.replaceState(window.history.state, "", `?${next.toString()}`);
-  }, []);
+    router.replace(`?${next.toString()}`, { scroll: false });
+  }, [router]);
 
   const errors = useMemo(
     () => validateInputs({ minFont, maxFont, minScreen, maxScreen, rootSize }),
