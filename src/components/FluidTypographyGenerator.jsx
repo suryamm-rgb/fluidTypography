@@ -16,7 +16,6 @@ import SavedConfigs from "./SavedConfigs";
 import AccessibilityWarning from "./AccessibilityWarning";
 import EmptyState from "./EmptyState";
 import DocsPanel from "./DocsPanel";
-import { useTheme } from "./useTheme";
 import { calculateClamp, generateTypeScale, getPreviewFontSize } from "./CalculateClamp";
 import { validateInputs } from "../lib/validate";
 
@@ -41,7 +40,6 @@ function enumParam(params, key, allowed, fallback) {
 
 export default function FluidTypographyGenerator() {
   const params = useSearchParams();
-  const { theme } = useTheme();
   const [format, setFormat] = useState("CSS");
 
   // All settings live in the URL, so a refresh or a shared link restores them.
@@ -220,7 +218,7 @@ export default function FluidTypographyGenerator() {
               <div className="results stack">
                 <Tabs items={TABS} value={activeTab} onChange={(v) => setParams({ tab: v })} prefix="main" label="Tool sections" className="tabs--main" />
                 {content}
-                <DocsPanel theme={theme} />
+                <DocsPanel />
               </div>
             </div>
           </div>
@@ -228,7 +226,7 @@ export default function FluidTypographyGenerator() {
         <footer className="site-footer">
           <div className="container">
             <span>Built by Surya M M</span>
-            <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
+            <a className="link-tap" href={REPO_URL} target="_blank" rel="noopener noreferrer">
               Source on GitHub<span className="sr-only"> (opens in a new tab)</span>
             </a>
           </div>

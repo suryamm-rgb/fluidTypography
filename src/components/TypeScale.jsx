@@ -1,7 +1,7 @@
 "use client";
 import { useId, useMemo, useState } from "react";
 import Card from "./Card";
-import Tabs from "./Tabs";
+import Tabs, { panelId, tabId } from "./Tabs";
 import CopyButton from "./CopyButton";
 import { generateTypeScale, getClampValue, getPreviewFontSize } from "./CalculateClamp";
 
@@ -177,6 +177,7 @@ export default function TypeScale({
         </div>
       </div>
 
+      <div role="tabpanel" id={panelId(`${uid}-unit`, unit)} aria-labelledby={tabId(`${uid}-unit`, unit)}>
       <ul className="scale-grid" style={{ listStyle: "none", padding: 0, marginBottom: 0 }}>
         {rows.map(({ label, token, minPx, maxPx, result, live }) => {
           const value = getClampValue(result, unit);
@@ -208,6 +209,7 @@ export default function TypeScale({
           );
         })}
       </ul>
+      </div>
     </Card>
   );
 }

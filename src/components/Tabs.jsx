@@ -1,8 +1,9 @@
 "use client";
 import { useRef } from "react";
 
-export const tabId = (prefix, id) => `${prefix}-tab-${id}`;
-export const panelId = (prefix, id) => `${prefix}-panel-${id}`;
+const slug = (id) => String(id).replace(/\s+/g, "-");
+export const tabId = (prefix, id) => `${prefix}-tab-${slug(id)}`;
+export const panelId = (prefix, id) => `${prefix}-panel-${slug(id)}`;
 
 /**
  * Accessible tab list (WAI-ARIA tabs, automatic activation).
