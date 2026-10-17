@@ -1,8 +1,6 @@
 import Link from "next/link";
 import ThemeToggle from "./ThemeToggle";
-import { GithubIcon, LogoMark } from "./Icons";
-
-export const REPO_URL = "https://github.com/suryamm-rgb/fluidTypography";
+import { LogoMark } from "./Icons";
 
 export default function Header({ title = "Fluid Typography" }) {
   return (
@@ -15,16 +13,6 @@ export default function Header({ title = "Fluid Typography" }) {
           <span className="brand__name">{title}</span>
         </Link>
         <div className="header-actions">
-          <a
-            className="icon-btn"
-            href={REPO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="View source on GitHub (opens in a new tab)"
-            title="GitHub"
-          >
-            <GithubIcon />
-          </a>
           <ThemeToggle />
         </div>
       </div>

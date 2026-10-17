@@ -1,6 +1,5 @@
 "use client";
 import Card from "./Card";
-import { REPO_URL } from "./Header";
 
 const SECTIONS = [
   {
@@ -46,9 +45,7 @@ export default function DocsPanel() {
         ))}
       </div>
       <p className="card__sub" style={{ marginTop: "var(--space-4)" }}>
-        <a className="link-tap" href={`${REPO_URL}/tree/main/docs`} target="_blank" rel="noopener noreferrer">
-          Read the full documentation<span className="sr-only"> (opens in a new tab)</span>
-        </a>
+        Full documentation is in the <code>docs</code> folder of the project.
       </p>
     </Card>
   );

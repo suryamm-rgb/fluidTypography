@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Header, { REPO_URL } from "./Header";
+import Header from "./Header";
 import { ToastProvider } from "./Toast";
 import Tabs, { panelId, tabId } from "./Tabs";
 import InputPanel from "./InputPanel";
@@ -227,9 +227,6 @@ export default function FluidTypographyGenerator() {
         <footer className="site-footer">
           <div className="container">
             <span>Built by Surya M M</span>
-            <a className="link-tap" href={REPO_URL} target="_blank" rel="noopener noreferrer">
-              Source on GitHub<span className="sr-only"> (opens in a new tab)</span>
-            </a>
           </div>
         </footer>
       </div>

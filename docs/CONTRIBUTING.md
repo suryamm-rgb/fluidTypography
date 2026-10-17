@@ -12,7 +12,7 @@ Thanks for helping. This page covers setup, commits, code style and pull request
 You need Node 22 or newer.
 
 ```bash
-git clone https://github.com/suryamm-rgb/fluidTypography.git
+git clone <your repository url>
 cd fluidTypography
 npm install
 npm run dev

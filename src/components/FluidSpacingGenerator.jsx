@@ -1,6 +1,6 @@
 "use client";
 import { useId, useMemo, useState } from "react";
-import Header, { REPO_URL } from "./Header";
+import Header from "./Header";
 import { ToastProvider } from "./Toast";
 import Card from "./Card";
 import Tabs, { panelId, tabId } from "./Tabs";
@@ -233,11 +233,7 @@ export default function FluidSpacingGenerator() {
           <Alert variant="info" title="Spacing and zoom">
             <p>Spacing can use <code>vw</code> more safely than text, because WCAG 1.4.4 is about text size. Keep the <code>rem</code> part, so user font settings still count.</p>
           </Alert>
-          <p>
-            <a className="link-tap" href={`${REPO_URL}/tree/main/docs`} target="_blank" rel="noopener noreferrer">
-              Read the full documentation<span className="sr-only"> (opens in a new tab)</span>
-            </a>
-          </p>
+          <p>Full documentation is in the <code>docs</code> folder of the project.</p>
         </div>
       </Card>,
     );
@@ -307,9 +303,6 @@ export default function FluidSpacingGenerator() {
         <footer className="site-footer">
           <div className="container">
             <span>Built by Surya M M</span>
-            <a className="link-tap" href={REPO_URL} target="_blank" rel="noopener noreferrer">
-              Source on GitHub<span className="sr-only"> (opens in a new tab)</span>
-            </a>
           </div>
         </footer>
       </div>

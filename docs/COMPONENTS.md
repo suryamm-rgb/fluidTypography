@@ -20,7 +20,7 @@ Every component lives in [`src/components/`](../src/components) unless noted. St
 
 | Component | File | Props | Purpose |
 | --- | --- | --- | --- |
-| `Header` | `Header.jsx` | `title?` | Sticky glass header: logo, GitHub link, theme toggle. Also exports `REPO_URL`. |
+| `Header` | `Header.jsx` | `title?` | Sticky glass header: logo and theme toggle. |
 | `InputPanel` | `InputPanel.jsx` | `minFont, maxFont, minScreen, maxScreen, rootSize, errors, onChange(patch), reverse, onToggleReverse` | Presets (Body, Heading, Hero, Caption), four linked fields, root size, reverse switch. Exports `PRESETS`. |
 | `OutputCard` | `OutputCard.jsx` | `result, minFont, maxFont, minScreen, maxScreen, unit, setUnit, format, setFormat` | rem/px/em tabs, big clamp value, CSS/JSON/Tailwind tabs, copy, download, min/preferred/max stats. |
 | `LivePreview` | `LivePreview.jsx` | `rangeMin, rangeMax, minScreen, maxScreen, previewScreen, setPreviewScreen, previewFontSize` | Width slider, resizable frame, font picker (Google fonts load on demand), sample text. |

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Header, { REPO_URL } from "../components/Header";
+import Header from "../components/Header";
 
 const tools = [
   {
@@ -52,9 +52,6 @@ export default function Home() {
       <footer className="site-footer">
         <div className="container">
           <span>Built by Surya M M</span>
-          <a className="link-tap" href={REPO_URL} target="_blank" rel="noopener noreferrer">
-            Source on GitHub<span className="sr-only"> (opens in a new tab)</span>
-          </a>
         </div>
       </footer>
     </div>
