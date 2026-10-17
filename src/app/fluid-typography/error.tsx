@@ -1,5 +1,4 @@
 "use client";
-import "../../styles/app.css";
 
 export default function Error({ reset }: { error: Error; reset: () => void }) {
   return (

@@ -1,3 +1,7 @@
+/* Minimal reset (replaces the Tailwind preflight that used to be loaded). */
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; -webkit-font-smoothing: antialiased; }
+
 /* Fluid Typography app styles. Everything is scoped to .ft so the other
  * pages are untouched. Tokens live in tokens.css. See docs/UI-DESIGN.md. */
 
@@ -24,7 +28,12 @@
 .ft summary,
 .ft [role="tab"] { cursor: pointer; }
 .ft button:disabled { cursor: not-allowed; }
-.ft h1, .ft h2, .ft h3, .ft p { margin: 0; }
+/* :where() keeps the reset at zero specificity so component rules always win. */
+:where(.ft h1, .ft h2, .ft h3, .ft h4, .ft p, .ft dl, .ft dd, .ft figure, .ft ul, .ft ol) { margin: 0; }
+:where(.ft button, .ft input, .ft select, .ft textarea) { font: inherit; color: inherit; letter-spacing: inherit; }
+:where(.ft hr) { height: 0; }
+:where(.ft table) { border-spacing: 0; }
+:where(.ft code, .ft pre) { font-size: 1em; }
 .ft code, .ft pre, .ft .mono { font-family: var(--font-mono); }
 .ft a { color: var(--accent-text); text-underline-offset: 0.2em; }
 .ft a:hover { color: var(--accent-hover); }
@@ -610,3 +619,19 @@
 .ft a.btn:hover { color: var(--text); }
 .ft .link-tap { display: inline-flex; align-items: center; min-height: var(--tap); }
 .ft .btn { min-width: var(--tap); }
+
+/* ── Spacing tool preview ───────────────────────────────────────────────── */
+.stats--4 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr)); margin-top: 0; }
+.stat strong { font-size: var(--step-1); }
+.sp-demo { position: relative; width: 100%; max-width: 100%; background: color-mix(in srgb, var(--c) 10%, var(--surface)); border: 1px dashed var(--c); border-radius: var(--radius-md); transition: padding 100ms var(--ease), gap 100ms var(--ease); overflow: hidden; }
+.sp-demo--gap { display: flex; flex-direction: column; padding: var(--space-3); }
+.sp-demo__box { padding: var(--space-2) var(--space-4); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); text-align: center; font-family: var(--font-mono); font-size: var(--step--1); color: var(--text-muted); }
+.sp-demo__label { position: absolute; top: 4px; left: 8px; font-family: var(--font-mono); font-size: var(--step--2); font-weight: 700; color: var(--c); }
+
+/* ── Home ───────────────────────────────────────────────────────────────── */
+.tool-grid { list-style: none; margin: 0; padding: 0 0 var(--space-8); display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); }
+.ft a.tool-card { display: flex; flex-direction: column; gap: var(--space-2); height: 100%; padding: var(--space-5); border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--surface); box-shadow: var(--shadow-sm); color: var(--text); text-decoration: none; transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease); }
+.ft a.tool-card:hover { border-color: var(--accent); box-shadow: var(--shadow-md); transform: translateY(-2px); color: var(--text); }
+.tool-card__title { font-size: var(--step-2); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+.tool-card__desc { color: var(--text-muted); font-size: var(--step-0); }
+.tool-card__go { margin-top: auto; padding-top: var(--space-3); color: var(--accent-text); font-weight: 600; font-size: var(--step--1); }

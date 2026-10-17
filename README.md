@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Fluid Typography Generator
 
-## Getting Started
+A small web tool that turns a min and max font size into one CSS `clamp()` value. The text then scales smoothly between two screen widths, with no media queries.
 
-First, run the development server:
+![Fluid Typography Generator, desktop, light theme](docs/screenshots/1440-light.png)
+
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000/fluid-typography
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Other scripts:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build      # production build
+npm test           # unit tests (node:test, no extra packages)
+npm run lint       # ESLint
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Features
 
-## Learn More
+- `clamp()` output in **rem**, **px** and **em**
+- Export as **CSS**, **JSON** or **Tailwind** config, with copy and download
+- Live preview with a resizable frame and font picker
+- SVG graph with a marker linked to the preview
+- Type scale (xs to 3xl) with eight modular ratios and line height
+- Breakpoint table, step-by-step formula, accessibility alerts
+- Reverse scaling (text gets smaller on wider screens)
+- Light and dark theme, follows your OS, remembers your choice
+- All settings live in the URL, so you can share a link
+- Works from 320px to ultrawide, touch friendly, keyboard friendly
 
-To learn more about Next.js, take a look at the following resources:
+## Documentation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| File | What is inside |
+| --- | --- |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Stack, folders, modules, key decisions |
+| [docs/FLOW.md](docs/FLOW.md) | Data flow from input to copy, with diagrams |
+| [docs/FORMULA.md](docs/FORMULA.md) | The math, worked examples, edge cases |
+| [docs/COMPONENTS.md](docs/COMPONENTS.md) | Every component, its props and file |
+| [docs/UI-DESIGN.md](docs/UI-DESIGN.md) | Tokens, colors, fonts, breakpoints, dark mode |
+| [docs/EXPORT-FORMATS.md](docs/EXPORT-FORMATS.md) | CSS, JSON and Tailwind output |
+| [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) | WCAG notes, zoom warning, testing checklist |
+| [docs/TESTING.md](docs/TESTING.md) | Run, extend and audit |
+| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | Setup, commits, style, pull requests |
+| [CHANGELOG.md](CHANGELOG.md) | What changed |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Other tools in this repo
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`/fluid-spacing` generates `clamp()` values for padding, margin and gap, with a live preview, scaling curve and a spacing scale. It uses the same design system and components. Its math is in `src/lib/spacing.js` (see [ARCHITECTURE.md](docs/ARCHITECTURE.md)).

@@ -4,15 +4,15 @@ import { GithubIcon, LogoMark } from "./Icons";
 
 export const REPO_URL = "https://github.com/suryamm-rgb/fluidTypography";
 
-export default function Header() {
+export default function Header({ title = "Fluid Typography" }) {
   return (
     <header className="site-header">
       <div className="container site-header__inner">
-        <Link href="/" className="brand" aria-label="Fluid Typography, all tools">
+        <Link href="/" className="brand" aria-label={`${title}, all tools`}>
           <span className="brand__mark">
             <LogoMark />
           </span>
-          <span className="brand__name">Fluid Typography</span>
+          <span className="brand__name">{title}</span>
         </Link>
         <div className="header-actions">
           <a

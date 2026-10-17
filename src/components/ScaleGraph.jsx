@@ -21,12 +21,16 @@ export default function ScaleGraph({
   previewScreen,
   setPreviewScreen,
   previewFontSize,
+  valueAt, // optional: (screen) => number. Defaults to the font-size formula.
+  title = "Scale graph",
+  subtitle = "Font size across screen widths. Drag on the chart to move the marker.",
+  noun = "Font size",
 }) {
   const box = useRef(null);
   const svg = useRef(null);
   const { width, height } = useElementSize(box);
 
-  const f = (s) => parseFloat(getPreviewFontSize(minFont, maxFont, minScreen, maxScreen, s));
+  const f = valueAt ?? ((s) => parseFloat(getPreviewFontSize(minFont, maxFont, minScreen, maxScreen, s)));
   const lo = Math.min(minFont, maxFont);
   const hi = Math.max(minFont, maxFont);
   const pad = hi === lo ? 2 : (hi - lo) * 0.18;
@@ -62,11 +66,11 @@ export default function ScaleGraph({
     if (e.currentTarget.hasPointerCapture(e.pointerId)) scrub(e);
   };
 
-  const summary = `Font size is ${f(minScreen)} pixels up to a ${minScreen} pixel screen, grows to ${f(maxScreen)} pixels at ${maxScreen} pixels, then stays flat. At ${previewScreen} pixels it is ${previewFontSize} pixels.`;
+  const summary = `${noun} is ${f(minScreen)} pixels up to a ${minScreen} pixel screen, grows to ${f(maxScreen)} pixels at ${maxScreen} pixels, then stays flat. At ${previewScreen} pixels it is ${previewFontSize} pixels.`;
   const compact = width < 440;
 
   return (
-    <Card id="graph" title="Scale graph" subtitle="Font size across screen widths. Drag on the chart to move the marker.">
+    <Card id="graph" title={title} subtitle={subtitle}>
       <div className="chart" ref={box}>
         {width > 0 && height > 0 && (
           <svg
@@ -115,7 +119,7 @@ export default function ScaleGraph({
         </span>
         <span>
           <i style={{ background: "var(--accent)" }} />
-          Font size
+          {noun}
         </span>
       </p>
     </Card>

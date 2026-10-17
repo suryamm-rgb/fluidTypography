@@ -1,81 +1,62 @@
 import Link from "next/link";
+import Header, { REPO_URL } from "../components/Header";
 
 const tools = [
   {
     href: "/fluid-typography",
     label: "Fluid Typography",
-    description:
-      "Generate CSS clamp() formulas that scale smoothly between screen sizes.",
-    tag: "CSS Utility",
+    description: "Generate CSS clamp() formulas that scale smoothly between screen sizes.",
+    tag: "CSS utility",
   },
   {
     href: "/fluid-spacing",
     label: "Fluid Spacing",
-    description:
-      "Generate clamp() values for padding, margin and gap — with live curve visualization.",
-    tag: "CSS Utility",
+    description: "Generate clamp() values for padding, margin and gap, with a live curve.",
+    tag: "CSS utility",
   },
-  // Add more tools here later
 ];
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#080808] text-[#e0e0e0] px-6 py-12 font-(family-name:--font-dm-mono)">
-      <div className="max-w-170 mx-auto">
-        {/* Header */}
-        <div className="mb-12">
-          <span className="inline-block bg-[#1a1a1a] border border-[#2a2a2a] rounded px-2.5 py-1 text-[11px] text-[#888] uppercase tracking-widest mb-4">
-            Developer Tools
-          </span>
-          <h1 className="font-(family-name:--font-syne) text-4xl font-bold text-white leading-none tracking-tight">
-            CSS Utilities
-          </h1>
-          <p className="text-[#888] text-[13px] mt-2.5 leading-relaxed">
-            A collection of small tools to make your frontend workflow faster.
-          </p>
-        </div>
+    <div className="ft">
+      <a className="skip-link" href="#main">
+        Skip to content
+      </a>
+      <Header title="CSS Utilities" />
+      <main id="main" tabIndex={-1}>
+        <div className="container">
+          <section className="intro" aria-labelledby="page-title">
+            <p className="eyebrow">Developer tools</p>
+            <h1 id="page-title">
+              Small tools for <em>fluid</em> CSS.
+            </h1>
+            <p>A collection of small tools to make your frontend workflow faster.</p>
+          </section>
 
-        {/* Tool Cards */}
-        <div className="flex flex-col gap-3">
-          {tools.map((tool) => (
-            <Link
-              key={tool.href}
-              href={tool.href}
-              className="group bg-[#0d0d0d] border border-[#1e1e1e] hover:border-violet-400/40 rounded-2xl p-6 transition-all duration-200 no-underline"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <span className="inline-block bg-[#1a1a1a] border border-[#2a2a2a] rounded px-2 py-0.5 text-[10px] text-[#777] uppercase tracking-widest mb-3">
-                    {tool.tag}
+          <ul className="tool-grid">
+            {tools.map((tool) => (
+              <li key={tool.href}>
+                <Link href={tool.href} className="tool-card">
+                  <span className="eyebrow">{tool.tag}</span>
+                  <span className="tool-card__title">{tool.label}</span>
+                  <span className="tool-card__desc">{tool.description}</span>
+                  <span className="tool-card__go" aria-hidden="true">
+                    Open →
                   </span>
-                  <h2 className="font-(family-name:--font-syne) text-lg font-bold text-white m-0 group-hover:text-violet-400 transition-colors">
-                    {tool.label}
-                  </h2>
-                  <p className="text-[#888] text-[12px] mt-1.5 leading-relaxed m-0">
-                    {tool.description}
-                  </p>
-                </div>
-                <span className="text-[#666] group-hover:text-violet-400 transition-colors text-xl mt-1 shrink-0">
-                  →
-                </span>
-              </div>
-            </Link>
-          ))}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
-
-        {/* Footer */}
-        <div className="mt-16 pt-6 border-t border-[#1a1a1a] flex items-center justify-between">
-          <span className="text-[11px] text-[#666] uppercase tracking-widest">
-            CSS Utilities
-          </span>
-          <span className="text-[11px] text-[#666]">
-            Built by{" "}
-            <span className="text-[#666] hover:text-violet-400 transition-colors cursor-default">
-              Surya M M
-            </span>
-          </span>
+      </main>
+      <footer className="site-footer">
+        <div className="container">
+          <span>Built by Surya M M</span>
+          <a className="link-tap" href={REPO_URL} target="_blank" rel="noopener noreferrer">
+            Source on GitHub<span className="sr-only"> (opens in a new tab)</span>
+          </a>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }

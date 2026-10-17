@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, DM_Mono, Syne } from "next/font/google";
-import "./globals.css";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "../styles/tokens.css";
+import "../styles/app.css";
 
 // Self-hosted at build time by next/font. display: swap avoids invisible text.
 const inter = Inter({
@@ -16,22 +16,6 @@ const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
   display: "swap",
   fallback: ["ui-monospace", "Menlo", "monospace"],
-});
-
-// The home page and the spacing tool still use these. They are not preloaded,
-// so the typography page does not pay for them.
-const dmMono = DM_Mono({
-  variable: "--font-dm-mono",
-  subsets: ["latin"],
-  weight: ["300", "400", "500"],
-  preload: false,
-});
-
-const syne = Syne({
-  variable: "--font-syne",
-  subsets: ["latin"],
-  weight: ["700", "800"],
-  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -59,14 +43,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${jetbrains.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body
-        className={`${inter.variable} ${jetbrains.variable} ${dmMono.variable} ${syne.variable} antialiased`}
-        suppressHydrationWarning
-      >
+      <body suppressHydrationWarning>
         {children}
       </body>
     </html>

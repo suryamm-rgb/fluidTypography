@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import "../../styles/app.css";
 import FluidTypographyGenerator from "../../components/FluidTypographyGenerator";
 import GeneratorSkeleton from "../../components/GeneratorSkeleton";
 
