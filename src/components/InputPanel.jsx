@@ -1,95 +1,141 @@
 "use client";
+import NumberField from "./NumberField";
+import Card from "./Card";
+
+export const PRESETS = [
+  { id: "body", label: "Body", min: 16, max: 18 },
+  { id: "heading", label: "Heading", min: 24, max: 40 },
+  { id: "hero", label: "Hero", min: 36, max: 72 },
+  { id: "caption", label: "Caption", min: 12, max: 14 },
+];
+
+const ROOT_SIZES = [14, 16, 18, 20];
 
 export default function InputPanel({
   minFont,
-  setMinFont,
   maxFont,
-  setMaxFont,
   minScreen,
-  setMinScreen,
   maxScreen,
-  setMaxScreen,
   rootSize,
-  setRootSize,
-  theme,
+  errors,
+  onChange, // (patch) => void
+  reverse,
+  onToggleReverse,
 }) {
-  const isDark = theme === "dark";
-  const cardBg = isDark
-    ? "bg-[#0d0d0d] border-[#1e1e1e]"
-    : "bg-white border-gray-200";
-  const inputCls = isDark
-    ? "bg-[#111] border-[#2a2a2a] text-white focus:border-violet-400"
-    : "bg-gray-50 border-gray-200 text-gray-900 focus:border-violet-400";
-  const labelCls = isDark ? "text-[#555]" : "text-gray-400";
-  const dividerCls = isDark ? "border-[#1a1a1a]" : "border-gray-100";
-  const noteCls = isDark ? "text-[#555]" : "text-gray-600";
-  const quickBtnActive =
-    "bg-violet-500/20 border-violet-400/50 text-violet-400";
-  const quickBtnIdle = isDark
-    ? "bg-[#111] border-[#2a2a2a] text-[#555] hover:text-[#888]"
-    : "bg-gray-50 border-gray-200 text-gray-400 hover:text-gray-600";
-
-  const fields = [
-    { label: "Min Font Size (px)", value: minFont, setter: setMinFont },
-    { label: "Max Font Size (px)", value: maxFont, setter: setMaxFont },
-    { label: "Min Screen (px)", value: minScreen, setter: setMinScreen },
-    { label: "Max Screen (px)", value: maxScreen, setter: setMaxScreen },
-  ];
-
   return (
-    <div className={`border rounded-2xl p-7 mb-6 ${cardBg}`}>
-      <div className="grid grid-cols-2 gap-5 mb-5">
-        {fields.map(({ label, value, setter }) => (
-          <div key={label}>
-            <label
-              className={`block text-[11px] uppercase tracking-widest mb-1.5 font-mono ${labelCls}`}
-            >
-              {label}
-            </label>
-            <input
-              type="number"
-              value={value}
-              onChange={(e) => setter(Number(e.target.value))}
-              className={`w-full border rounded-lg font-mono text-[15px] px-3.5 py-2.5 outline-none transition-colors ${inputCls}`}
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Root font size */}
-      <div className={`border-t pt-5 ${dividerCls}`}>
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <label
-              className={`block text-[11px] uppercase tracking-widest mb-0.5 font-mono ${labelCls}`}
-            >
-              Root Font Size (px)
-            </label>
-            <p className={`text-[12px] font-mono ${noteCls}`}>
-              Used for rem conversion · browser default is 16px
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {[14, 16, 18, 20].map((size) => (
+    <Card id="inputs" title="Settings" subtitle="Font size grows from min to max across the screen range.">
+      <div className="stack">
+        <div role="group" aria-labelledby="preset-label">
+          <p id="preset-label" className="eyebrow" style={{ marginBottom: "var(--space-2)" }}>
+            Presets
+          </p>
+          <div className="chips">
+            {PRESETS.map((p) => (
               <button
-                key={size}
-                onClick={() => setRootSize(size)}
-                className={`w-10 h-8 rounded text-[12px] font-mono cursor-pointer transition-all border ${
-                  rootSize === size ? quickBtnActive : quickBtnIdle
-                }`}
+                key={p.id}
+                type="button"
+                className="chip"
+                aria-pressed={minFont === p.min && maxFont === p.max}
+                onClick={() => onChange({ minFont: p.min, maxFont: p.max })}
               >
-                {size}
+                {p.label}
+                <small>
+                  {p.min}–{p.max}
+                </small>
               </button>
             ))}
-            <input
-              type="number"
-              value={rootSize}
-              onChange={(e) => setRootSize(Number(e.target.value))}
-              className={`w-16 border rounded-lg font-mono text-[13px] px-2.5 py-1.5 outline-none transition-colors text-center ${inputCls}`}
-            />
           </div>
         </div>
+
+        <div className="fields-grid">
+          <NumberField
+            label="Min font size"
+            value={minFont}
+            error={errors.minFont}
+            onChange={(v) => onChange({ minFont: v })}
+            sliderMin={8}
+            sliderMax={160}
+            step={0.5}
+          />
+          <NumberField
+            label="Max font size"
+            value={maxFont}
+            error={errors.maxFont}
+            onChange={(v) => onChange({ maxFont: v })}
+            sliderMin={8}
+            sliderMax={160}
+            step={0.5}
+          />
+          <NumberField
+            label="Min screen"
+            value={minScreen}
+            error={errors.minScreen}
+            onChange={(v) => onChange({ minScreen: v })}
+            sliderMin={240}
+            sliderMax={1600}
+          />
+          <NumberField
+            label="Max screen"
+            value={maxScreen}
+            error={errors.maxScreen}
+            onChange={(v) => onChange({ maxScreen: v })}
+            sliderMin={400}
+            sliderMax={2560}
+          />
+        </div>
+
+        <hr className="divider" style={{ margin: 0 }} />
+
+        <div role="group" aria-labelledby="root-label">
+          <p id="root-label" className="field__label" style={{ marginBottom: "var(--space-1)" }}>
+            Root font size
+          </p>
+          <p className="field__hint" style={{ marginBottom: "var(--space-2)" }}>
+            Used to convert px to rem. Browser default is 16px.
+          </p>
+          <div className="chips" style={{ marginBottom: "var(--space-3)" }}>
+            {ROOT_SIZES.map((s) => (
+              <button
+                key={s}
+                type="button"
+                className="chip"
+                aria-pressed={rootSize === s}
+                onClick={() => onChange({ rootSize: s })}
+              >
+                {s}px
+              </button>
+            ))}
+          </div>
+          <NumberField
+            label="Custom root size"
+            value={rootSize}
+            error={errors.rootSize}
+            onChange={(v) => onChange({ rootSize: v })}
+          />
+        </div>
+
+        <hr className="divider" style={{ margin: 0 }} />
+
+        <div className="switch-row">
+          <div>
+            <p id="reverse-label" className="field__label">
+              Reverse scaling
+            </p>
+            <p id="reverse-desc" className="field__hint">
+              Text gets smaller as the screen gets wider (negative vw).
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            className="switch"
+            aria-checked={reverse}
+            aria-labelledby="reverse-label"
+            aria-describedby="reverse-desc"
+            onClick={onToggleReverse}
+          />
+        </div>
       </div>
-    </div>
+    </Card>
   );
 }

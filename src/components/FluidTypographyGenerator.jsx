@@ -1,332 +1,239 @@
 "use client";
-import { useMemo, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { useCallback, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import Header, { REPO_URL } from "./Header";
+import { ToastProvider } from "./Toast";
+import Tabs, { panelId, tabId } from "./Tabs";
 import InputPanel from "./InputPanel";
-import ClampResult from "./ClampResult";
-import ScaleGraph from "./ScaleGraph";
+import OutputCard from "./OutputCard";
 import LivePreview from "./LivePreview";
-import TypeScale from "./TypeScale";
-import AccessibilityWarning from "./AccessibilityWarning";
-import BreakpointTable from "./BreakpointTable";
+import ScaleGraph from "./ScaleGraph";
 import FormulaPanel from "./FormulaPanel";
-import SavedConfigs from "./SavedConfigs";
+import BreakpointTable from "./BreakpointTable";
+import TypeScale from "./TypeScale";
 import ExportPanel from "./ExportPanel";
+import SavedConfigs from "./SavedConfigs";
+import AccessibilityWarning from "./AccessibilityWarning";
+import EmptyState from "./EmptyState";
 import DocsPanel from "./DocsPanel";
-import {
-  calculateClamp,
-  generateGraphData,
-  getPreviewFontSize,
-  generateTypeScale,
-} from "./CalculateClamp";
+import { useTheme } from "./useTheme";
+import { calculateClamp, generateTypeScale, getPreviewFontSize } from "./CalculateClamp";
+import { validateInputs } from "../lib/validate";
 
-const TABS = ["Single", "Type Scale", "Export"];
+const TABS = [
+  { id: "Single", label: "Single" },
+  { id: "Type Scale", label: "Type Scale" },
+  { id: "Export", label: "Export" },
+];
+const TAB_IDS = TABS.map((t) => t.id);
+const UNITS = ["rem", "px", "em"];
+const DEFAULTS = { minFont: 12, maxFont: 20, minScreen: 375, maxScreen: 1280, rootSize: 16, previewScreen: 800 };
 
 function numParam(params, key, fallback) {
+  const raw = params.get(key);
+  const n = raw !== null && raw.trim() !== "" ? Number(raw) : NaN;
+  return Number.isFinite(n) ? n : fallback;
+}
+function enumParam(params, key, allowed, fallback) {
   const v = params.get(key);
-  const n = v !== null ? Number(v) : NaN;
-  return isNaN(n) ? fallback : n;
+  return allowed.includes(v) ? v : fallback;
 }
 
 export default function FluidTypographyGenerator() {
-  const router = useRouter();
   const params = useSearchParams();
+  const { theme } = useTheme();
+  const [format, setFormat] = useState("CSS");
 
-  // All state is stored in the URL — refresh restores everything exactly.
-  const minFont = numParam(params, "minFont", 12);
-  const maxFont = numParam(params, "maxFont", 20);
-  const minScreen = numParam(params, "minScreen", 375);
-  const maxScreen = numParam(params, "maxScreen", 1280);
-  const rootSize = numParam(params, "rootSize", 16);
-  const previewScreen = numParam(params, "previewScreen", 800);
-  const activeTab = params.get("tab") ?? "Single";
-  const unit = params.get("unit") ?? "rem";
-  const reverseScale = params.get("reverse") === "1";
-  const theme = params.get("theme") ?? "dark";
+  // All settings live in the URL, so a refresh or a shared link restores them.
+  const minFont = numParam(params, "minFont", DEFAULTS.minFont);
+  const maxFont = numParam(params, "maxFont", DEFAULTS.maxFont);
+  const minScreen = numParam(params, "minScreen", DEFAULTS.minScreen);
+  const maxScreen = numParam(params, "maxScreen", DEFAULTS.maxScreen);
+  const rootSize = numParam(params, "rootSize", DEFAULTS.rootSize);
+  const rawPreview = numParam(params, "previewScreen", DEFAULTS.previewScreen);
+  const activeTab = enumParam(params, "tab", TAB_IDS, "Single");
+  const unit = enumParam(params, "unit", UNITS, "rem");
+  const reverse = params.get("reverse") === "1";
 
-  const setParam = useCallback(
-    (patch) => {
-      const next = new URLSearchParams(params.toString());
-      Object.entries(patch).forEach(([k, v]) => {
-        if (v === null || v === undefined) next.delete(k);
-        else next.set(k, String(v));
-      });
-      router.replace(`?${next.toString()}`, { scroll: false });
-    },
-    [params, router],
+  const setParams = useCallback((patch) => {
+    // Read the live URL, not a stale render, so quick slider drags never lose updates.
+    const next = new URLSearchParams(window.location.search);
+    for (const [k, v] of Object.entries(patch)) {
+      if (v === null || v === undefined) next.delete(k);
+      else next.set(k, String(v));
+    }
+    window.history.replaceState(window.history.state, "", `?${next.toString()}`);
+  }, []);
+
+  const errors = useMemo(
+    () => validateInputs({ minFont, maxFont, minScreen, maxScreen, rootSize }),
+    [minFont, maxFont, minScreen, maxScreen, rootSize],
+  );
+  const isValid = Object.keys(errors).length === 0;
+
+  const effMin = reverse ? maxFont : minFont;
+  const effMax = reverse ? minFont : maxFont;
+
+  // The preview slider covers a little more than the fluid range on both sides.
+  const rangeMin = Math.max(200, minScreen - 100);
+  const rangeMax = maxScreen + 100;
+  const previewScreen = Math.min(rangeMax, Math.max(rangeMin, Math.round(rawPreview)));
+
+  const calc = useMemo(() => {
+    if (!isValid) return null;
+    return {
+      result: calculateClamp(effMin, effMax, minScreen, maxScreen, rootSize),
+      scale: generateTypeScale(effMin, effMax, minScreen, maxScreen, rootSize, 1.25),
+      previewFontSize: getPreviewFontSize(effMin, effMax, minScreen, maxScreen, previewScreen),
+    };
+  }, [isValid, effMin, effMax, minScreen, maxScreen, rootSize, previewScreen]);
+
+  const onInputChange = useCallback((patch) => setParams(patch), [setParams]);
+
+  const panel = (id, children) => (
+    <div role="tabpanel" id={panelId("main", id)} aria-labelledby={tabId("main", id)} className="stack" tabIndex={-1}>
+      {children}
+    </div>
   );
 
-  const setMinFont = (v) => setParam({ minFont: v });
-  const setMaxFont = (v) => setParam({ maxFont: v });
-  const setMinScreen = (v) => setParam({ minScreen: v });
-  const setMaxScreen = (v) => setParam({ maxScreen: v });
-  const setRootSize = (v) => setParam({ rootSize: v });
-  const setPreviewScreen = (v) => setParam({ previewScreen: v });
-  const setActiveTab = (v) => setParam({ tab: v });
-  const setUnit = (v) => setParam({ unit: v });
-  const setTheme = (v) => setParam({ theme: v });
-  const toggleReverse = () => setParam({ reverse: reverseScale ? "0" : "1" });
-
-  const isDark = theme === "dark";
-  const effectiveMin = reverseScale ? maxFont : minFont;
-  const effectiveMax = reverseScale ? minFont : maxFont;
-
-  const result = useMemo(
-    () =>
-      calculateClamp(
-        effectiveMin,
-        effectiveMax,
-        minScreen,
-        maxScreen,
-        rootSize,
-      ),
-    [effectiveMin, effectiveMax, minScreen, maxScreen, rootSize],
-  );
-  const graphData = useMemo(
-    () => generateGraphData(effectiveMin, effectiveMax, minScreen, maxScreen),
-    [effectiveMin, effectiveMax, minScreen, maxScreen],
-  );
-  const previewFontSize = useMemo(
-    () =>
-      getPreviewFontSize(
-        effectiveMin,
-        effectiveMax,
-        minScreen,
-        maxScreen,
-        previewScreen,
-      ),
-    [effectiveMin, effectiveMax, minScreen, maxScreen, previewScreen],
-  );
-  const typeScale = useMemo(
-    () =>
-      generateTypeScale(
-        effectiveMin,
-        effectiveMax,
-        minScreen,
-        maxScreen,
-        rootSize,
-        1.25,
-      ),
-    [effectiveMin, effectiveMax, minScreen, maxScreen, rootSize],
-  );
-
-  const bg = isDark ? "bg-[#080808]" : "bg-gray-50";
-  const text = isDark ? "text-[#e0e0e0]" : "text-gray-900";
-  const cardBg = isDark ? "bg-[#0d0d0d]" : "bg-white";
-  const border = isDark ? "border-[#1e1e1e]" : "border-gray-200";
-  const label = isDark ? "text-[#555]" : "text-gray-400";
-  // Dark mode
-  const tabActive = isDark
-    ? "bg-violet-500/15 border-violet-400/40 text-violet-300 shadow-[0_0_12px_rgba(139,92,246,0.25)]"
-    : "bg-violet-50 border-violet-300 text-violet-700 shadow-sm";
-
-  const tabIdle = isDark
-    ? "bg-transparent border-transparent text-[#666] hover:text-[#aaa] hover:border-[#2a2a2a]"
-    : "bg-transparent border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200";
-  return (
-    <div
-      className={`min-h-screen ${bg} ${text} font-mono px-6 py-12 box-border transition-colors duration-200`}
-    >
-      <div className="max-w-200 mx-auto">
-        {/* Header */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <Link
-              href="/"
-              className={`inline-flex items-center gap-1.5 text-[14px] hover:text-violet-400 transition-colors no-underline uppercase tracking-widest ${label}`}
-            >
-              ← Back
-            </Link>
-            <button
-              onClick={() => setTheme(isDark ? "light" : "dark")}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[14px] font-mono cursor-pointer transition-all ${
-                isDark
-                  ? "bg-[#111] border-[#2a2a2a] text-[#555] hover:text-[#888]"
-                  : "bg-white border-gray-200 text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              {isDark ? "☀ Light" : "◑ Dark"}
-            </button>
-          </div>
-          <span
-            className={`block border rounded px-2.5 py-1 text-[11px] uppercase tracking-widest mb-4 font-mono w-fit ${
-              isDark
-                ? "bg-[#1a1a1a] border-[#2a2a2a] text-[#666]"
-                : "bg-gray-100 border-gray-200 text-gray-400"
-            }`}
-          >
-            CSS Utility
-          </span>
-          <h1 className="font-(family-name:--font-syne) text-[clamp(28px,5vw,42px)] font-extrabold leading-none tracking-tight">
-            Fluid Typography
-          </h1>
-          <p
-            className={`text-[13px] mt-2.5 leading-relaxed ${isDark ? "text-[#666]" : "text-gray-400"}`}
-          >
-            Generate CSS <span className="text-violet-400">clamp()</span>{" "}
-            formulas that scale smoothly between screen sizes.
-          </p>
-        </div>
-        <DocsPanel theme={theme} />
-
-        {/* Inputs */}
-        <InputPanel
-          minFont={minFont}
-          setMinFont={setMinFont}
-          maxFont={maxFont}
-          setMaxFont={setMaxFont}
+  let content;
+  if (!isValid) {
+    content = panel(
+      activeTab,
+      <section className="card" aria-live="polite">
+        <EmptyState tone="error" title="Fix the highlighted settings">
+          {Object.values(errors)[0]} Your clamp() will appear here as soon as every field is valid.
+        </EmptyState>
+      </section>,
+    );
+  } else if (activeTab === "Single") {
+    content = panel(
+      "Single",
+      <>
+        <AccessibilityWarning isNegativeVw={calc.result.isNegativeVw} />
+        <OutputCard
+          result={calc.result}
+          minFont={effMin}
+          maxFont={effMax}
           minScreen={minScreen}
-          setMinScreen={setMinScreen}
           maxScreen={maxScreen}
-          setMaxScreen={setMaxScreen}
-          rootSize={rootSize}
-          setRootSize={setRootSize}
-          theme={theme}
+          unit={unit}
+          setUnit={(v) => setParams({ unit: v })}
+          format={format}
+          setFormat={setFormat}
         />
-
-        {/* Reverse scale toggle */}
-        <div
-          className={`${cardBg} border ${border} rounded-2xl px-6 py-4 mb-6 flex items-center justify-between gap-4 flex-wrap`}
-        >
-          <div>
-            <p
-              className={`text-[13px] uppercase tracking-widest font-mono mb-0.5 ${label}`}
-            >
-              Reverse Scaling
-            </p>
-            <p
-              className={`text-[12px] font-mono ${isDark ? "text-[#555]" : "text-gray-400"}`}
-            >
-              Font size{" "}
-              <span className={isDark ? "text-[#666]" : "text-gray-600"}>
-                decreases
-              </span>{" "}
-              as screen width increases (negative vw)
-            </p>
-          </div>
-          <button
-            onClick={toggleReverse}
-            className={`relative w-11 h-6 rounded-full border transition-all duration-200 cursor-pointer shrink-0 ${
-              reverseScale
-                ? "bg-violet-500/30 border-violet-400/50"
-                : isDark
-                  ? "bg-[#111] border-[#2a2a2a]"
-                  : "bg-gray-100 border-gray-200"
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 w-5 h-5 rounded-full transition-all duration-200 ${
-                reverseScale
-                  ? "left-4.5 bg-violet-400"
-                  : `left-0.5 ${isDark ? "bg-[#333]" : "bg-gray-300"}`
-              }`}
-            />
-          </button>
-        </div>
-
-        {/* Tab switcher */}
-        <div
-          className={`flex gap-1 mb-6 ${cardBg} border ${border} rounded-xl p-1`}
-        >
-          {TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-2 rounded-lg text-[12px] font-mono tracking-wide cursor-pointer transition-all border ${
-                activeTab === tab ? tabActive : tabIdle
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        {activeTab === "Single" && (
-          <AccessibilityWarning
-            isNegativeVw={result.isNegativeVw}
-            theme={theme}
-          />
-        )}
-
-        {activeTab === "Single" && (
-          <>
-            <ClampResult
-              result={result}
-              minFont={effectiveMin}
-              maxFont={effectiveMax}
-              unit={unit}
-              setUnit={setUnit}
-              theme={theme}
-            />
-            <FormulaPanel
-              minFont={effectiveMin}
-              maxFont={effectiveMax}
-              minScreen={minScreen}
-              maxScreen={maxScreen}
-              rootSize={rootSize}
-              theme={theme}
-            />
-            <BreakpointTable
-              minFont={effectiveMin}
-              maxFont={effectiveMax}
-              minScreen={minScreen}
-              maxScreen={maxScreen}
-              theme={theme}
-            />
-            <ScaleGraph
-              graphData={graphData}
-              minScreen={minScreen}
-              maxScreen={maxScreen}
-              theme={theme}
-            />
-            <LivePreview
-              minScreen={minScreen}
-              maxScreen={maxScreen}
-              previewScreen={previewScreen}
-              setPreviewScreen={setPreviewScreen}
-              previewFontSize={previewFontSize}
-              theme={theme}
-            />
-          </>
-        )}
-
-        {activeTab === "Type Scale" && (
-          <TypeScale
-            minFont={effectiveMin}
-            maxFont={effectiveMax}
+        <div className="pair">
+          <LivePreview
+            rangeMin={rangeMin}
+            rangeMax={rangeMax}
             minScreen={minScreen}
             maxScreen={maxScreen}
-            rootSize={rootSize}
-            unit={unit}
-            setUnit={setUnit}
-            theme={theme}
+            previewScreen={previewScreen}
+            setPreviewScreen={(v) => setParams({ previewScreen: v })}
+            previewFontSize={calc.previewFontSize}
           />
-        )}
+          <ScaleGraph
+            minFont={effMin}
+            maxFont={effMax}
+            minScreen={minScreen}
+            maxScreen={maxScreen}
+            rangeMin={rangeMin}
+            rangeMax={rangeMax}
+            previewScreen={previewScreen}
+            setPreviewScreen={(v) => setParams({ previewScreen: v })}
+            previewFontSize={calc.previewFontSize}
+          />
+        </div>
+        <FormulaPanel minFont={effMin} maxFont={effMax} minScreen={minScreen} maxScreen={maxScreen} rootSize={rootSize} />
+        <BreakpointTable minFont={effMin} maxFont={effMax} minScreen={minScreen} maxScreen={maxScreen} />
+      </>,
+    );
+  } else if (activeTab === "Type Scale") {
+    content = panel(
+      "Type Scale",
+      <TypeScale
+        minFont={effMin}
+        maxFont={effMax}
+        minScreen={minScreen}
+        maxScreen={maxScreen}
+        rootSize={rootSize}
+        unit={unit}
+        setUnit={(v) => setParams({ unit: v })}
+        previewScreen={previewScreen}
+        setPreviewScreen={(v) => setParams({ previewScreen: v })}
+        rangeMin={rangeMin}
+        rangeMax={rangeMax}
+      />,
+    );
+  } else {
+    content = panel(
+      "Export",
+      <>
+        <ExportPanel
+          result={calc.result}
+          scale={calc.scale}
+          unit={unit}
+          minFont={effMin}
+          maxFont={effMax}
+          minScreen={minScreen}
+          maxScreen={maxScreen}
+          format={format}
+          setFormat={setFormat}
+        />
+        <SavedConfigs current={{ minFont: effMin, maxFont: effMax, minScreen, maxScreen, rootSize }} unit={unit} />
+      </>,
+    );
+  }
 
-        {activeTab === "Export" && (
-          <>
-            <SavedConfigs
-              currentMinFont={effectiveMin}
-              currentMaxFont={effectiveMax}
-              currentMinScreen={minScreen}
-              currentMaxScreen={maxScreen}
-              currentRootSize={rootSize}
-              unit={unit}
-              theme={theme}
-            />
-            <ExportPanel
-              result={result}
-              scale={typeScale}
-              unit={unit}
-              theme={theme}
-              minFont={effectiveMin}
-              maxFont={effectiveMax}
-              minScreen={minScreen}
-              maxScreen={maxScreen}
-            />
-          </>
-        )}
+  return (
+    <ToastProvider>
+      <div className="ft">
+        <a className="skip-link" href="#main">
+          Skip to content
+        </a>
+        <Header />
+        <main id="main" tabIndex={-1}>
+          <div className="container">
+            <section className="intro" aria-labelledby="page-title">
+              <p className="eyebrow">CSS utility</p>
+              <h1 id="page-title">
+                Fluid type, <em>calculated.</em>
+              </h1>
+              <p>Generate CSS clamp() values that scale smoothly between screen sizes.</p>
+            </section>
+
+            <div className="layout">
+              <aside className="sidebar" aria-label="Settings">
+                <InputPanel
+                  minFont={minFont}
+                  maxFont={maxFont}
+                  minScreen={minScreen}
+                  maxScreen={maxScreen}
+                  rootSize={rootSize}
+                  errors={errors}
+                  onChange={onInputChange}
+                  reverse={reverse}
+                  onToggleReverse={() => setParams({ reverse: reverse ? "0" : "1" })}
+                />
+              </aside>
+
+              <div className="results stack">
+                <Tabs items={TABS} value={activeTab} onChange={(v) => setParams({ tab: v })} prefix="main" label="Tool sections" className="tabs--main" />
+                {content}
+                <DocsPanel theme={theme} />
+              </div>
+            </div>
+          </div>
+        </main>
+        <footer className="site-footer">
+          <div className="container">
+            <span>Built by Surya M M</span>
+            <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
+              Source on GitHub<span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          </div>
+        </footer>
       </div>
-    </div>
+    </ToastProvider>
   );
 }
