@@ -1,33 +1,9 @@
 "use client";
-
-import { generateBreakpointTable } from "./CalculateClamp";
 import { useMemo } from "react";
+import Card from "./Card";
+import { generateBreakpointTable } from "./CalculateClamp";
 
-const ZONE_STYLES = {
-  min: {
-    dot: "bg-[#333]",
-    dotLight: "bg-gray-300",
-    text: "text-[#555]",
-    textLight: "text-gray-400",
-    label: "min",
-  },
-  fluid: {
-    dot: "bg-violet-500",
-    dotLight: "bg-violet-500",
-    text: "text-violet-400",
-    textLight: "text-violet-500",
-    label: "fluid",
-  },
-  max: {
-    dot: "bg-[#333]",
-    dotLight: "bg-gray-300",
-    text: "text-[#555]",
-    textLight: "text-gray-400",
-    label: "max",
-  },
-};
-
-const DEVICE_LABELS = {
+const DEVICES = {
   320: "iPhone SE",
   375: "iPhone 14",
   480: "Small mobile",
@@ -38,150 +14,56 @@ const DEVICE_LABELS = {
   1440: "Large desktop",
   1920: "Wide screen",
 };
+const ZONE_LABEL = { min: "min", fluid: "fluid", max: "max" };
 
-export default function BreakpointTable({
-  minFont,
-  maxFont,
-  minScreen,
-  maxScreen,
-  theme,
-}) {
-  const isDark = theme === "dark";
-
+export default function BreakpointTable({ minFont, maxFont, minScreen, maxScreen }) {
   const rows = useMemo(
     () => generateBreakpointTable(minFont, maxFont, minScreen, maxScreen),
     [minFont, maxFont, minScreen, maxScreen],
   );
-
-  // ── theme helpers ────────────────────────────────────────────────────────
-  const cardBg = isDark
-    ? "bg-[#0d0d0d] border-[#1e1e1e]"
-    : "bg-white border-gray-200";
-  const label = isDark ? "text-[#555]" : "text-gray-400";
-  const legend = isDark ? "text-[#444]" : "text-gray-400";
-  const tableWrap = isDark ? "border-[#1a1a1a]" : "border-gray-200";
-  const headerBg = isDark
-    ? "bg-[#111] border-[#1a1a1a]"
-    : "bg-gray-50 border-gray-200";
-  const headerTxt = isDark ? "text-[#333]" : "text-gray-400";
-  const rowBorder = isDark ? "border-[#111]" : "border-gray-100";
-  const evenRow = isDark ? "bg-[#0a0a0a]" : "bg-white";
-  const oddRow = isDark ? "bg-[#0d0d0d]" : "bg-gray-50/60";
-  const screenTxt = isDark ? "text-[#e0e0e0]" : "text-gray-800";
-  const deviceTxt = isDark ? "text-[#333]" : "text-gray-400";
-  const barTrack = isDark ? "bg-[#1a1a1a]" : "bg-gray-200";
-  const barFluid = isDark ? "bg-violet-500/60" : "bg-violet-400/50";
-  const barClamped = isDark ? "bg-[#2a2a2a]" : "bg-gray-300";
-
-  // Bug fix: for reverse scaling minFont > maxFont, so lo/hi are correct but
-  // the bar should fill based on how "large" the size is relative to the range.
-  // Using (size - lo) / (hi - lo) is always correct regardless of direction
-  // since we're comparing the actual rendered size value against the range bounds.
   const lo = Math.min(minFont, maxFont);
   const hi = Math.max(minFont, maxFont);
 
   return (
-    <div className={`border rounded-2xl p-7 mb-6 transition-colors ${cardBg}`}>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
-        <p
-          className={`text-[11px] uppercase tracking-widest font-mono ${label}`}
-        >
-          Breakpoint Table
-        </p>
-        <div className="flex items-center gap-4">
-          {[
-            { dot: isDark ? "bg-[#333]" : "bg-gray-300", label: "clamped" },
-            { dot: "bg-violet-500", label: "fluid" },
-          ].map(({ dot, label: lbl }) => (
-            <div key={lbl} className="flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${dot}`} />
-              <span
-                className={`text-[10px] font-mono uppercase tracking-widest ${legend}`}
-              >
-                {lbl}
-              </span>
-            </div>
-          ))}
-        </div>
+    <Card id="breakpoints" title="Breakpoint table" subtitle="The font size you get at common screen widths.">
+      <div className="table-wrap">
+        <table className="bp-table">
+          <thead>
+            <tr>
+              <th scope="col">Screen</th>
+              <th scope="col">Device</th>
+              <th scope="col">Font size</th>
+              <th scope="col">Zone</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ screen, size, zone }) => {
+              const pct = hi !== lo ? Math.max(0, Math.min(100, ((size - lo) / (hi - lo)) * 100)) : 100;
+              return (
+                <tr key={screen}>
+                  <td data-label="Screen" className="num">
+                    {screen}px
+                  </td>
+                  <td data-label="Device" className={DEVICES[screen] ? undefined : "no-device"}>
+                    {DEVICES[screen] ?? ""}
+                  </td>
+                  <td data-label="Font size" className="num">
+                    <span>
+                      {size}px
+                      <span className="bp-bar" aria-hidden="true">
+                        <i style={{ width: `${pct}%` }} />
+                      </span>
+                    </span>
+                  </td>
+                  <td data-label="Zone">
+                    <span className={`badge${zone === "fluid" ? " badge--fluid" : ""}`}>{ZONE_LABEL[zone]}</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-
-      {/* Table */}
-      <div className={`overflow-hidden rounded-xl border ${tableWrap}`}>
-        {/* Header row */}
-        <div className={`grid grid-cols-4 px-4 py-2.5 border-b ${headerBg}`}>
-          {["Screen", "Device", "Font Size", "Zone"].map((h) => (
-            <span
-              key={h}
-              className={`text-[10px] uppercase tracking-widest font-mono ${headerTxt}`}
-            >
-              {h}
-            </span>
-          ))}
-        </div>
-
-        {/* Data rows */}
-        {rows.map(({ screen, size, zone }, i) => {
-          const style = ZONE_STYLES[zone];
-          const device = DEVICE_LABELS[screen] ?? "";
-          const isEven = i % 2 === 0;
-
-          // Bug fix: bar represents font size magnitude within the full range.
-          // This is always correct: lo/hi are sorted, size is clamped within them.
-          // For reverse scale: small screens → large font → bar fills more. ✓
-          // For normal scale: large screens → large font → bar fills more. ✓
-          const barPct =
-            hi !== lo
-              ? Math.max(0, Math.min(100, ((size - lo) / (hi - lo)) * 100))
-              : 0;
-
-          return (
-            <div
-              key={screen}
-              className={`grid grid-cols-4 px-4 py-3 items-center border-b ${rowBorder} last:border-0 ${isEven ? evenRow : oddRow}`}
-            >
-              {/* Screen width */}
-              <span className={`text-[13px] font-mono ${screenTxt}`}>
-                {screen}px
-              </span>
-
-              {/* Device label */}
-              <span className={`text-[11px] font-mono ${deviceTxt}`}>
-                {device}
-              </span>
-
-              {/* Font size + bar */}
-              <div className="flex items-center gap-2">
-                <span
-                  className={`text-[13px] font-mono font-semibold ${isDark ? style.text : style.textLight}`}
-                >
-                  {size}px
-                </span>
-                <div
-                  className={`flex-1 max-w-15 h-1 rounded-full overflow-hidden ${barTrack}`}
-                >
-                  <div
-                    className={`h-full rounded-full transition-all ${zone === "fluid" ? barFluid : barClamped}`}
-                    style={{ width: `${barPct}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Zone badge */}
-              <div className="flex items-center gap-1.5">
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${isDark ? style.dot : style.dotLight}`}
-                />
-                <span
-                  className={`text-[10px] font-mono uppercase tracking-widest ${isDark ? style.text : style.textLight}`}
-                >
-                  {style.label}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    </Card>
   );
 }

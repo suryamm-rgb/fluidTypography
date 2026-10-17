@@ -1,292 +1,157 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useEffect, useId, useState } from "react";
+import Card from "./Card";
 
-const FONT_OPTIONS = [
-  // ── Project fonts ─────────────────────────────────────────
-  { label: "Syne", value: "var(--font-syne)", category: "Project" },
-  { label: "Geist Sans", value: "var(--font-geist-sans)", category: "Project" },
-  { label: "DM Mono", value: "var(--font-dm-mono)", category: "Project" },
-  { label: "Geist Mono", value: "var(--font-geist-mono)", category: "Project" },
-  // ── Sans-serif ────────────────────────────────────────────
-  { label: "Inter", value: "'Inter', sans-serif", category: "Sans" },
-  { label: "Outfit", value: "'Outfit', sans-serif", category: "Sans" },
-  {
-    label: "Plus Jakarta",
-    value: "'Plus Jakarta Sans', sans-serif",
-    category: "Sans",
-  },
-  { label: "DM Sans", value: "'DM Sans', sans-serif", category: "Sans" },
-  { label: "Nunito", value: "'Nunito', sans-serif", category: "Sans" },
-  { label: "Manrope", value: "'Manrope', sans-serif", category: "Sans" },
-  { label: "System UI", value: "system-ui, sans-serif", category: "Sans" },
-  // ── Display / Heading ─────────────────────────────────────
-  { label: "Fraunces", value: "'Fraunces', serif", category: "Display" },
-  {
-    label: "Playfair",
-    value: "'Playfair Display', serif",
-    category: "Display",
-  },
-  {
-    label: "Cormorant",
-    value: "'Cormorant Garamond', serif",
-    category: "Display",
-  },
-  {
-    label: "Space Grotesk",
-    value: "'Space Grotesk', sans-serif",
-    category: "Display",
-  },
-  { label: "Unbounded", value: "'Unbounded', sans-serif", category: "Display" },
-  // ── Serif ─────────────────────────────────────────────────
-  { label: "Lora", value: "'Lora', serif", category: "Serif" },
-  { label: "Merriweather", value: "'Merriweather', serif", category: "Serif" },
-  { label: "Georgia", value: "Georgia, serif", category: "Serif" },
-  // ── Mono ──────────────────────────────────────────────────
-  {
-    label: "JetBrains",
-    value: "'JetBrains Mono', monospace",
-    category: "Mono",
-  },
-  { label: "Fira Code", value: "'Fira Code', monospace", category: "Mono" },
-  {
-    label: "IBM Plex Mono",
-    value: "'IBM Plex Mono', monospace",
-    category: "Mono",
-  },
+const FONTS = [
+  { group: "App", label: "Inter", value: "var(--font-inter), system-ui, sans-serif" },
+  { group: "App", label: "JetBrains Mono", value: "var(--font-jetbrains), ui-monospace, monospace" },
+  { group: "System", label: "System UI", value: "system-ui, sans-serif" },
+  { group: "System", label: "Georgia", value: "Georgia, serif" },
+  { group: "System", label: "Courier", value: "'Courier New', monospace" },
+  // Google fonts: loaded only when picked, so they cost nothing until used.
+  { group: "Sans", label: "Outfit", value: "'Outfit', sans-serif", google: "Outfit" },
+  { group: "Sans", label: "Plus Jakarta Sans", value: "'Plus Jakarta Sans', sans-serif", google: "Plus+Jakarta+Sans" },
+  { group: "Sans", label: "DM Sans", value: "'DM Sans', sans-serif", google: "DM+Sans" },
+  { group: "Sans", label: "Manrope", value: "'Manrope', sans-serif", google: "Manrope" },
+  { group: "Display", label: "Fraunces", value: "'Fraunces', serif", google: "Fraunces" },
+  { group: "Display", label: "Playfair Display", value: "'Playfair Display', serif", google: "Playfair+Display" },
+  { group: "Display", label: "Space Grotesk", value: "'Space Grotesk', sans-serif", google: "Space+Grotesk" },
+  { group: "Serif", label: "Lora", value: "'Lora', serif", google: "Lora" },
+  { group: "Serif", label: "Merriweather", value: "'Merriweather', serif", google: "Merriweather" },
+  { group: "Mono", label: "Fira Code", value: "'Fira Code', monospace", google: "Fira+Code" },
+  { group: "Mono", label: "IBM Plex Mono", value: "'IBM Plex Mono', monospace", google: "IBM+Plex+Mono" },
 ];
+const GROUPS = ["App", "System", "Sans", "Display", "Serif", "Mono"];
 
-const CATEGORIES = ["Project", "Sans", "Display", "Serif", "Mono"];
-
-// Google Fonts that need to be loaded at runtime (project fonts are already loaded)
-const GOOGLE_FONTS = [
-  "Inter",
-  "Outfit",
-  "Plus+Jakarta+Sans",
-  "DM+Sans",
-  "Nunito",
-  "Manrope",
-  "Fraunces",
-  "Playfair+Display",
-  "Cormorant+Garamond",
-  "Space+Grotesk",
-  "Unbounded",
-  "Lora",
-  "Merriweather",
-  "JetBrains+Mono",
-  "Fira+Code",
-  "IBM+Plex+Mono",
-];
-
-const PREVIEW_TEXTS = [
+const TEXTS = [
   "The quick brown fox jumps over the lazy dog",
   "Fluid typography scales smoothly between breakpoints",
   "Pack my box with five dozen liquor jugs",
-  "How vexingly quick daft zebras jump",
 ];
 
-export default function LivePreview({
-  minScreen,
-  maxScreen,
-  previewScreen,
-  setPreviewScreen,
-  previewFontSize,
-  theme,
-}) {
-  const isDark = theme === "dark";
+function loadGoogleFont(family) {
+  const id = `gf-${family}`;
+  if (document.getElementById(id)) return;
+  const link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${family}:wght@400;600;700&display=swap`;
+  document.head.appendChild(link);
+}
 
-  const [selectedFont, setSelectedFont] = useState(FONT_OPTIONS[0].value);
-  const [activeCategory, setActiveCategory] = useState("Project");
-  const [previewText, setPreviewText] = useState(PREVIEW_TEXTS[0]);
-  const [customText, setCustomText] = useState("");
-  const [showCustom, setShowCustom] = useState(false);
+export default function LivePreview({ rangeMin, rangeMax, minScreen, maxScreen, previewScreen, setPreviewScreen, previewFontSize }) {
+  const uid = useId();
+  const [fontValue, setFontValue] = useState(FONTS[0].value);
+  const [textIdx, setTextIdx] = useState(0); // -1 = custom
+  const [custom, setCustom] = useState("");
 
-  // ── Inject Google Fonts safely after mount (avoids SSR mismatch) ──────────
+  const font = FONTS.find((f) => f.value === fontValue) ?? FONTS[0];
   useEffect(() => {
-    const id = "live-preview-gfonts";
-    if (document.getElementById(id)) return;
-    const families = GOOGLE_FONTS.map(
-      (f) => `family=${f}:wght@400;600;700`,
-    ).join("&");
-    const link = document.createElement("link");
-    link.id = id;
-    link.rel = "stylesheet";
-    link.href = `https://fonts.googleapis.com/css2?${families}&display=swap`;
-    document.head.appendChild(link);
-  }, []);
+    if (font.google) loadGoogleFont(font.google);
+  }, [font]);
 
-  const muted = isDark ? "text-[#555]" : "text-gray-500";
-  const muted2 = isDark ? "text-[#555]" : "text-gray-500";
-  const cardBg = isDark
-    ? "bg-[#0d0d0d] border-[#1e1e1e]"
-    : "bg-white border-gray-200";
-  const innerBg = isDark
-    ? "bg-[#111] border-[#1e1e1e]"
-    : "bg-gray-50 border-gray-200";
-  const inputCls = isDark
-    ? "bg-[#111] border-[#2a2a2a] text-white focus:border-violet-400"
-    : "bg-gray-50 border-gray-200 text-gray-900 focus:border-violet-400";
-  const btnIdle = isDark
-    ? "bg-[#111] border-[#2a2a2a] text-[#555] hover:text-[#888]"
-    : "bg-gray-50 border-gray-200 text-gray-400 hover:text-gray-600";
-  const btnActive = "bg-violet-500/20 border-violet-400/50 text-violet-400";
-  const catIdle = isDark
-    ? "text-[#444] hover:text-[#777] border-transparent"
-    : "text-gray-300 hover:text-gray-500 border-transparent";
-  const catActive = isDark
-    ? "text-violet-400 border-violet-400/40"
-    : "text-violet-600 border-violet-300";
-
-  const displayText = showCustom
-    ? customText || "Type something…"
-    : previewText;
-  const filteredFonts = FONT_OPTIONS.filter(
-    (f) => f.category === activeCategory,
-  );
-  const activeFontLabel =
-    FONT_OPTIONS.find((f) => f.value === selectedFont)?.label ?? "";
+  const text = textIdx === -1 ? custom || "Type your own text…" : TEXTS[textIdx];
+  const span = rangeMax - rangeMin;
+  const fill = ((previewScreen - rangeMin) / span) * 100;
+  // The frame is always at least 38% wide so it stays readable at tiny widths.
+  const framePct = 38 + (fill / 100) * 62;
+  const zone = previewScreen <= minScreen ? "min size" : previewScreen >= maxScreen ? "max size" : "fluid zone";
 
   return (
-    <div className={`border rounded-2xl p-7 ${cardBg}`}>
-      {/* Header */}
-      <div className="flex justify-between items-center mb-5 flex-wrap gap-2">
-        <p
-          className={`text-[11px] uppercase tracking-widest font-mono ${muted}`}
-        >
-          Live Preview
+    <Card
+      id="preview"
+      title="Live preview"
+      subtitle="Drag to resize the frame and see the font size change."
+      actions={
+        <p className="readout" aria-hidden="true">
+          <span>
+            screen <b>{previewScreen}px</b>
+          </span>
+          <span>
+            font <b>{previewFontSize}px</b>
+          </span>
         </p>
-        <p className={`text-[12px] font-mono ${muted}`}>
-          screen: <span className="text-violet-400">{previewScreen}px</span>
-          {" → "}
-          font: <span className="text-violet-400">{previewFontSize}px</span>
-        </p>
-      </div>
-
-      {/* Screen slider */}
+      }
+    >
+      <label className="field__label" htmlFor={`${uid}-w`}>
+        Screen width
+      </label>
       <input
+        id={`${uid}-w`}
+        className="range"
         type="range"
-        min={minScreen}
-        max={maxScreen}
+        min={rangeMin}
+        max={rangeMax}
+        step={1}
         value={previewScreen}
         onChange={(e) => setPreviewScreen(Number(e.target.value))}
-        className="w-full mb-6 accent-violet-400"
+        style={{ "--fill": `${fill}%` }}
+        aria-valuetext={`${previewScreen} pixels wide, font size ${previewFontSize} pixels, ${zone}`}
       />
-
-      {/* Font family picker */}
-      <div className="mb-5">
-        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-          <p
-            className={`text-[10px] uppercase tracking-widest font-mono ${muted2}`}
-          >
-            Font Family
-          </p>
-          {/* Category tabs */}
-          <div className="flex gap-1">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`px-2.5 py-1 rounded text-[10px] font-mono border cursor-pointer transition-all ${
-                  activeCategory === cat ? catActive : catIdle
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+      <div className="preview-stage">
+        <div className="preview-frame" style={{ width: `${framePct}%` }}>
+          <div className="preview-frame__bar">
+            <span className="preview-frame__dots" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
+            <span>
+              {previewScreen}px · {zone}
+            </span>
+          </div>
+          <div className="preview-frame__body">
+            <p className="preview-text" style={{ fontSize: `${previewFontSize}px`, fontFamily: font.value }}>
+              {text}
+            </p>
           </div>
         </div>
-
-        {/* Font pills for active category */}
-        <div className="flex flex-wrap gap-1.5">
-          {filteredFonts.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setSelectedFont(f.value)}
-              style={{ fontFamily: f.value }}
-              className={`px-3 py-1.5 rounded-lg border text-[12px] cursor-pointer transition-all ${
-                selectedFont === f.value ? btnActive : btnIdle
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
       </div>
 
-      {/* Preview text selector */}
-      <div className="mb-5">
-        <p
-          className={`text-[10px] uppercase tracking-widest font-mono mb-2 ${muted2}`}
-        >
-          Preview Text
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {PREVIEW_TEXTS.map((t) => {
-            const isActive = !showCustom && previewText === t;
-            return (
-              <button
-                key={t}
-                onClick={() => {
-                  setShowCustom(false);
-                  setPreviewText(t);
-                }}
-                className={`px-3 py-1.5 rounded-lg border text-[11px] font-mono cursor-pointer transition-all ${
-                  isActive ? btnActive : btnIdle
-                }`}
-              >
-                {t.length > 26 ? t.slice(0, 26) + "…" : t}
+      <div className="control-row">
+        <div className="field">
+          <label className="field__label" htmlFor={`${uid}-f`}>
+            Font family
+          </label>
+          <select id={`${uid}-f`} className="input select" value={fontValue} onChange={(e) => setFontValue(e.target.value)}>
+            {GROUPS.map((g) => (
+              <optgroup key={g} label={g}>
+                {FONTS.filter((f) => f.group === g).map((f) => (
+                  <option key={f.value} value={f.value}>
+                    {f.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+        <div role="group" aria-labelledby={`${uid}-t`}>
+          <p id={`${uid}-t`} className="field__label" style={{ marginBottom: "var(--space-2)" }}>
+            Sample text
+          </p>
+          <div className="chips">
+            {TEXTS.map((t, i) => (
+              <button key={t} type="button" className="chip" aria-pressed={textIdx === i} onClick={() => setTextIdx(i)}>
+                {t.split(" ").slice(0, 3).join(" ")}…
               </button>
-            );
-          })}
-          <button
-            onClick={() => setShowCustom(true)}
-            className={`px-3 py-1.5 rounded-lg border text-[11px] font-mono cursor-pointer transition-all ${
-              showCustom ? btnActive : btnIdle
-            }`}
-          >
-            Custom…
-          </button>
+            ))}
+            <button type="button" className="chip" aria-pressed={textIdx === -1} onClick={() => setTextIdx(-1)}>
+              Custom
+            </button>
+          </div>
+          {textIdx === -1 && (
+            <input
+              className="input input--text"
+              style={{ marginTop: "var(--space-2)" }}
+              type="text"
+              value={custom}
+              placeholder="Type your own text"
+              aria-label="Custom sample text"
+              onChange={(e) => setCustom(e.target.value)}
+            />
+          )}
         </div>
-
-        {showCustom && (
-          <input
-            autoFocus
-            type="text"
-            value={customText}
-            placeholder="Type your own preview text…"
-            onChange={(e) => setCustomText(e.target.value)}
-            className={`mt-2 w-full border rounded-lg px-3 py-2 text-[13px] font-mono outline-none transition-colors ${inputCls}`}
-          />
-        )}
       </div>
-
-      {/* Preview box */}
-      <div className={`border rounded-xl px-6 py-10 text-center ${innerBg}`}>
-        <p
-          className={`text-[9px] uppercase tracking-widest font-mono mb-4 ${muted2}`}
-        >
-          {activeFontLabel} · {previewFontSize}px
-        </p>
-        <p
-          style={{
-            fontSize: `${previewFontSize}px`,
-            fontFamily: selectedFont,
-            transition: "font-size 0.1s, font-family 0.15s",
-            lineHeight: 1.3,
-          }}
-          className={`m-0 ${isDark ? "text-[#e0e0e0]" : "text-gray-900"}`}
-        >
-          {displayText}
-        </p>
-      </div>
-
-      {/* Size ruler */}
-      <div
-        className={`flex justify-between mt-3 text-[10px] font-mono ${muted2}`}
-      >
-        <span>{minScreen}px</span>
-        <span className="text-violet-400">{previewScreen}px</span>
-        <span>{maxScreen}px</span>
-      </div>
-    </div>
+    </Card>
   );
 }

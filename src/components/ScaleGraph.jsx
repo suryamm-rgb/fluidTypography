@@ -1,89 +1,123 @@
 "use client";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-} from "recharts";
+import { useRef } from "react";
+import Card from "./Card";
+import { useElementSize } from "./useElementSize";
+import { getPreviewFontSize } from "./CalculateClamp";
 
-function CustomTooltip({ active, payload, isDark }) {
-  if (!active || !payload?.length) return null;
-  const bg = isDark
-    ? "bg-[#0f0f0f] border-[#2a2a2a] text-[#e0e0e0]"
-    : "bg-white border-gray-200 text-gray-800";
-  const mutedT = isDark ? "text-[#8b8b8b]" : "text-gray-400";
+const M = { top: 14, right: 14, bottom: 34, left: 48 };
+
+/**
+ * Flat → diagonal → flat chart, drawn as plain SVG.
+ * It measures its container, so labels stay 12px at every width.
+ * The marker follows previewScreen, and dragging the chart sets it.
+ */
+export default function ScaleGraph({
+  minFont,
+  maxFont,
+  minScreen,
+  maxScreen,
+  rangeMin,
+  rangeMax,
+  previewScreen,
+  setPreviewScreen,
+  previewFontSize,
+}) {
+  const box = useRef(null);
+  const svg = useRef(null);
+  const { width, height } = useElementSize(box);
+
+  const f = (s) => parseFloat(getPreviewFontSize(minFont, maxFont, minScreen, maxScreen, s));
+  const lo = Math.min(minFont, maxFont);
+  const hi = Math.max(minFont, maxFont);
+  const pad = hi === lo ? 2 : (hi - lo) * 0.18;
+  const yLo = lo - pad;
+  const yHi = hi + pad;
+
+  const innerW = Math.max(0, width - M.left - M.right);
+  const innerH = Math.max(0, height - M.top - M.bottom);
+  const x = (s) => M.left + ((s - rangeMin) / (rangeMax - rangeMin)) * innerW;
+  const y = (v) => M.top + (1 - (v - yLo) / (yHi - yLo)) * innerH;
+
+  const pts = [rangeMin, minScreen, maxScreen, rangeMax].map((s) => [x(s), y(f(s))]);
+  const path = pts.map(([px, py], i) => `${i ? "L" : "M"}${px.toFixed(1)} ${py.toFixed(1)}`).join(" ");
+
+  const mx = x(previewScreen);
+  const my = y(parseFloat(previewFontSize));
+  const pillText = `${previewScreen}px → ${previewFontSize}px`;
+  const pillW = pillText.length * 7.3 + 16;
+  const flip = mx > M.left + innerW * 0.55;
+  const pillX = flip ? mx - pillW - 8 : mx + 8;
+
+  const scrub = (e) => {
+    const rect = svg.current.getBoundingClientRect();
+    const t = (e.clientX - rect.left - M.left) / innerW;
+    const s = Math.round(rangeMin + Math.min(1, Math.max(0, t)) * (rangeMax - rangeMin));
+    setPreviewScreen(s);
+  };
+  const onDown = (e) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    scrub(e);
+  };
+  const onMove = (e) => {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) scrub(e);
+  };
+
+  const summary = `Font size is ${f(minScreen)} pixels up to a ${minScreen} pixel screen, grows to ${f(maxScreen)} pixels at ${maxScreen} pixels, then stays flat. At ${previewScreen} pixels it is ${previewFontSize} pixels.`;
+  const compact = width < 440;
+
   return (
-    <div
-      className={`border rounded-lg px-3.5 py-2.5 font-mono text-[12px] shadow-lg ${bg}`}
-    >
-      <p className={`mb-1 ${mutedT}`}>screen</p>
-      <p className="font-semibold">{payload[0].payload.screen}px</p>
-      <p className={`mt-1.5 mb-1 ${mutedT}`}>font-size</p>
-      <p className="text-violet-400 font-semibold">{payload[0].value}px</p>
-    </div>
-  );
-}
-
-export default function ScaleGraph({ graphData, minScreen, maxScreen, theme }) {
-  const isDark = theme === "dark";
-  const cardCls = isDark
-    ? "bg-[#0d0d0d] border-[#1e1e1e]"
-    : "bg-white border-gray-200";
-  const muted = isDark ? "text-[#555]" : "text-gray-400";
-  const muted2 = isDark ? "text-[#444]" : "text-gray-400";
-  const tickFill = isDark ? "#444" : "#9ca3af";
-  const axisLine = isDark ? "#1e1e1e" : "#e5e7eb";
-  const refLine = isDark ? "#2a2a2a" : "#d1d5db";
-
-  return (
-    <div className={`border rounded-2xl p-7 mb-6 transition-colors ${cardCls}`}>
-      <p
-        className={`text-[11px] uppercase tracking-widest mb-5 font-mono ${muted}`}
-      >
-        Scale Visualization
-      </p>
-
-      <ResponsiveContainer width="100%" height={200}>
-        <LineChart
-          data={graphData}
-          margin={{ top: 4, right: 4, left: -10, bottom: 4 }}
-        >
-          <XAxis
-            dataKey="screen"
-            tick={{ fill: tickFill, fontSize: 11, fontFamily: "DM Mono" }}
-            tickLine={false}
-            axisLine={{ stroke: axisLine }}
-            tickFormatter={(v) => `${v}px`}
-          />
-          <YAxis
-            tick={{ fill: tickFill, fontSize: 11, fontFamily: "DM Mono" }}
-            tickLine={false}
-            axisLine={false}
-            tickFormatter={(v) => `${v}px`}
-          />
-          <Tooltip content={<CustomTooltip isDark={isDark} />} />
-          <ReferenceLine x={minScreen} stroke={refLine} strokeDasharray="4 4" />
-          <ReferenceLine x={maxScreen} stroke={refLine} strokeDasharray="4 4" />
-          <Line
-            type="monotone"
-            dataKey="size"
-            stroke="#a78bfa"
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 4, fill: "#a78bfa", strokeWidth: 0 }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-
-      <div
-        className={`flex justify-center gap-6 mt-2 text-[11px] font-mono ${muted2}`}
-      >
-        <span>← min screen: {minScreen}px</span>
-        <span>max screen: {maxScreen}px →</span>
+    <Card id="graph" title="Scale graph" subtitle="Font size across screen widths. Drag on the chart to move the marker.">
+      <div className="chart" ref={box}>
+        {width > 0 && height > 0 && (
+          <svg
+            ref={svg}
+            viewBox={`0 0 ${width} ${height}`}
+            width={width}
+            height={height}
+            role="img"
+            aria-label={summary}
+            onPointerDown={onDown}
+            onPointerMove={onMove}
+          >
+            <rect className="zone" x={x(minScreen)} y={M.top} width={Math.max(0, x(maxScreen) - x(minScreen))} height={innerH} />
+            {[lo, hi].map((v, i) => (
+              <g key={i}>
+                <line className="grid" x1={M.left} x2={M.left + innerW} y1={y(v)} y2={y(v)} />
+                <text x={M.left - 8} y={y(v)} textAnchor="end" dominantBaseline="middle">
+                  {Number(v.toFixed(1))}px
+                </text>
+              </g>
+            ))}
+            {[minScreen, maxScreen].map((s, i) => (
+              <g key={s}>
+                <line className="guide" x1={x(s)} x2={x(s)} y1={M.top} y2={M.top + innerH} />
+                <text x={x(s)} y={M.top + innerH + 20} textAnchor={compact ? (i ? "end" : "start") : "middle"}>
+                  {s}px
+                </text>
+              </g>
+            ))}
+            <path className="line" d={path} />
+            <line className="marker-guide" x1={mx} x2={mx} y1={M.top} y2={M.top + innerH} />
+            <circle className="marker" cx={mx} cy={my} r={6} />
+            <g transform={`translate(${Math.max(M.left, Math.min(pillX, width - M.right - pillW))} ${M.top + 6})`}>
+              <rect className="marker-pill" width={pillW} height={24} rx={12} />
+              <text className="marker-label" x={pillW / 2} y={12} textAnchor="middle" dominantBaseline="middle">
+                {pillText}
+              </text>
+            </g>
+          </svg>
+        )}
       </div>
-    </div>
+      <p className="legend">
+        <span>
+          <i style={{ background: "var(--chart-zone)", border: "1px solid var(--accent)" }} />
+          Fluid zone
+        </span>
+        <span>
+          <i style={{ background: "var(--accent)" }} />
+          Font size
+        </span>
+      </p>
+    </Card>
   );
 }
